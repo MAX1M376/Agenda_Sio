@@ -1,6 +1,7 @@
 ﻿using SIO_AgendaWPF.Models;
 using SIO_AgendaWPF.Properties;
 using SIO_AgendaWPF.Repositories;
+using SIO_AgendaWPF.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,46 +39,18 @@ namespace SIO_AgendaWPF
             WindowState = Settings.Default.Maximized ? WindowState.Maximized : WindowState.Normal;
             Width = Settings.Default.Size.Width; Height = Settings.Default.Size.Height;
             _ShowOld = Settings.Default.ShowOld;
-
             _GridDevoirs = new List<Grid>();
             _Repository = new AgendaRepository();
-
-            var taskDevoirs = Task.Run(() => _Repository.GetDevoirs());
-            while (taskDevoirs.Status != TaskStatus.RanToCompletion) { }
-            _Devoirs = taskDevoirs.Result;
-            _Devoirs.ForEach(x => x.Date += new TimeSpan(23, 59, 59));
-            _ActualDevoirs = _Devoirs;
-
-            var taskClasses = Task.Run(() => _Repository.GetClasses());
-            while (taskClasses.Status != TaskStatus.RanToCompletion) { }
-            _Classes = taskClasses.Result;
-
-            var taskMatieres = Task.Run(() => _Repository.GetMatieres());
-            while (taskMatieres.Status != TaskStatus.RanToCompletion) { }
-            _Matieres = taskMatieres.Result;
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             // Hauteur du StackPanel du menu
             _HeightPnlDevoirs = Pnl_MenuDevoirs.ActualHeight;
+            ((TextBlock)Btn_AfficheOld.Child).Text = _ShowOld ? "Cacher les anciens" : "Montrer les anciens";
             Pnl_MenuDevoirs.Height = 0;
 
-            // Ajouter une classe dans le menu
-            AddClasse(0, "Tous");
-            foreach (var item in _Classes.Where(x => x.Libelle.ToUpper() != "GROUPE A & B").OrderBy(x => x.Libelle).ToArray())
-            {
-                AddClasse(item.Id, item.Libelle);
-            }
-
-            // Button d'afficher les afficher ou pas
-            ((TextBlock)Btn_AfficheOld.Child).Text = _ShowOld ? "Cacher les anciens" : "Montrer les anciens";
-            AfficherDevoirs(_Devoirs);
-            _ActualDevoirs = _Devoirs;
-
-            // Ajouter itmes aux combobox
-            Cmb_Classe.ItemsSource = _Classes.OrderBy(x => x.Libelle).ToArray();
-            Cmb_Matiere.ItemsSource = _Matieres.OrderBy(x => x.Libelle).ToArray();
+            LoadDataComponents(true);
 
             // Set timer
             _Timer = new Timer()
@@ -96,7 +69,7 @@ namespace SIO_AgendaWPF
                 {
                     MainWindow wind = Application.Current.MainWindow as MainWindow;
                     int[] idsSelected = _ActualDevoirs.Where(item => _GridDevoirs.Any(x => int.Parse(((CheckBox)x.Children[0]).Uid) == item.Id && ((CheckBox)x.Children[0]).IsChecked.Value)).Select(y => y.Id).ToArray();
-                    wind.Refresh_MouseDown(sender, null);
+                    LoadDataComponents(false);
                     wind._GridDevoirs.Where(item => idsSelected.Any(x => x == int.Parse(((CheckBox)item.Children[0]).Uid))).ToList().ForEach(item => ((CheckBox)item.Children[0]).IsChecked = true);
                 }, null);
             }
@@ -179,8 +152,6 @@ namespace SIO_AgendaWPF
                 _Devoirs = taskDevoirs.Result;
                 _Devoirs.ForEach(x => x.Date += new TimeSpan(23, 59, 59));
             }
-
-
         }
 
         private void DeleteAll_MouseDown(object sender, MouseButtonEventArgs e)
@@ -230,12 +201,7 @@ namespace SIO_AgendaWPF
 
         private void Refresh_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            var taskDevoirs = Task.Run(() => _Repository.GetDevoirs());
-            while (taskDevoirs.Status != TaskStatus.RanToCompletion) { }
-            _Devoirs = taskDevoirs.Result;
-            _Devoirs.ForEach(x => x.Date += new TimeSpan(23, 59, 59));
-            _ActualDevoirs = _Devoirs;
-            AfficherDevoirs(_ActualDevoirs);
+            LoadDataComponents(false);
         }
 
         #endregion
@@ -362,6 +328,48 @@ namespace SIO_AgendaWPF
         #endregion
 
         #region Privee
+        private void LoadDataComponents(bool chargement)
+        {
+            Txb_Chargement.Visibility = chargement ? Visibility.Visible : Visibility.Collapsed;
+
+            var taskOnLoad = Task.Factory.StartNew(() =>
+            {
+                var taskDevoirs = Task.Run(() => _Repository.GetDevoirs());
+                while (taskDevoirs.Status != TaskStatus.RanToCompletion) { }
+                _Devoirs = taskDevoirs.Result;
+                _Devoirs.ForEach(x => x.Date += new TimeSpan(23, 59, 59));
+                _ActualDevoirs = _Devoirs;
+
+                var taskClasses = Task.Run(() => _Repository.GetClasses());
+                while (taskClasses.Status != TaskStatus.RanToCompletion) { }
+                _Classes = taskClasses.Result;
+
+                var taskMatieres = Task.Run(() => _Repository.GetMatieres());
+                while (taskMatieres.Status != TaskStatus.RanToCompletion) { }
+                _Matieres = taskMatieres.Result;
+
+                Thread.Sleep(500);
+            });
+
+            Task.Factory.ContinueWhenAll(new[] { taskOnLoad }, x =>
+            {
+                Application.Current.ExecOnUiThread(() =>
+                {
+                    // Ajouter une classe dans le menu
+                    AddClasse(_Classes.Where(x => x.Libelle.ToUpper() != "GROUPE A & B").OrderBy(x => x.Libelle).Append(new Classe { Id = 0, Libelle = "Tous" }).ToArray());
+
+                    // Button d'afficher les afficher ou pas
+                    AfficherDevoirs(_Devoirs);
+                    _ActualDevoirs = _Devoirs;
+
+                    // Ajouter itmes aux combobox
+                    Cmb_Classe.ItemsSource = _Classes.OrderBy(x => x.Libelle).ToArray();
+                    Cmb_Matiere.ItemsSource = _Matieres.OrderBy(x => x.Libelle).ToArray();
+
+                    Txb_Chargement.Visibility = Visibility.Collapsed;
+                });
+            });
+        }
         private void OpenModal(string libelle, Matiere matiere, Classe classe, string description, DateTime? date, Methodes editable)
         {
             Bdr_Modal.Visibility = Visibility.Visible;
@@ -379,17 +387,23 @@ namespace SIO_AgendaWPF
             Cmb_Matiere.IsEnabled = editable != Methodes.Selectionner;
             Txb_Description.IsReadOnly = editable == Methodes.Selectionner;
         }
-        private void AddClasse(int id, string libelle)
+        private void AddClasse(Classe[] classes)
         {
-            // Ajout des elements a Pnl_Devoirs
-            var btn = new Border
+            Pnl_MenuDevoirs.Children.RemoveRange(0, Pnl_MenuDevoirs.Children.Count);
+
+            Border btn;
+            foreach (var item in classes)
             {
-                Uid = id.ToString(),
-                Style = (Style)Resources["ButtonMenuStyle"],
-                Child = new TextBlock() { Style = (Style)Resources["TextBlockMenuStyle"], Text = libelle }
-            };
-            btn.MouseDown += Classe_MouseDown;
-            Pnl_MenuDevoirs.Children.Add(btn);
+                // Ajout des elements a Pnl_Devoirs
+                btn = new Border
+                {
+                    Uid = item.Id.ToString(),
+                    Style = (Style)Resources["ButtonMenuStyle"],
+                    Child = new TextBlock() { Style = (Style)Resources["TextBlockMenuStyle"], Text = item.Libelle }
+                };
+                btn.MouseDown += Classe_MouseDown;
+                Pnl_MenuDevoirs.Children.Add(btn);
+            }
 
             // Resize de Pnl_Devoirs
             Pnl_MenuDevoirs.UpdateLayout();
@@ -546,9 +560,10 @@ namespace SIO_AgendaWPF
         }
         private void AfficherDevoirs(List<Devoir> devoirs)
         {
+            Pnl_Devoirs.Children.RemoveRange(1, Pnl_Devoirs.Children.Count);
+
             if (!_ShowOld)
             {
-                Pnl_Devoirs.Children.RemoveRange(0, Pnl_Devoirs.Children.Count);
                 var dev_temp = devoirs.Where(x => x.Date >= DateTime.Now).ToList();
                 if (dev_temp.Count == 0)
                 {
@@ -563,7 +578,6 @@ namespace SIO_AgendaWPF
             }
             else
             {
-                Pnl_Devoirs.Children.RemoveRange(0, Pnl_Devoirs.Children.Count);
                 RefreshDevoir(devoirs);
             }
             Window_SizeChanged(null, null);

@@ -650,6 +650,8 @@
 
             <ScrollViewer Grid.Row="1" Grid.Column="2" VerticalScrollBarVisibility="Auto" Style="{StaticResource ScrollBarStyleLight}" Margin="0,5">
                 <StackPanel x:Name="Pnl_Devoirs" Orientation="Vertical" Margin=" 25,10,30,10">
+                    <TextBlock x:Name="Txb_Chargement" Text="Chargement..." TextWrapping="Wrap" HorizontalAlignment="Center" Margin="0,100" Foreground="{DynamicResource TextLightColor}" VerticalAlignment="Top" FontSize="36" Visibility="Hidden"/>
+
                     <!--Ajouter les devoirs-->
                 </StackPanel>
             </ScrollViewer>

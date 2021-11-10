@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "UWCXeJStXPQzTfsguhcuUl4M1NCFHeaSNYhnGB5Q3hGNHdXio3tviwHFmxOfzJ6+v0V5IvV9F8tLHnZpF5sM3A==",
+  "dgSpecHash": "2bggvRz25KMjzxVQ0bFz3A5dFjIxiTE3M6SiFxv6AyTchJHU+SbL0qbuJTSoHFgkyCzV+zH1ckEcN0UIKC/qPQ==",
   "success": true,
-  "projectFilePath": "C:\\Users\\Maxime\\Desktop\\MAD_Agenda\\SIO_AgendaWPF\\SIO_AgendaWPF\\SIO_AgendaWPF.csproj",
+  "projectFilePath": "C:\\Users\\Maxime\\Documents\\Development\\Git\\Agenda_Sio\\SIO_AgendaWPF\\SIO_AgendaWPF.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Maxime\\.nuget\\packages\\newtonsoft.json\\13.0.1\\newtonsoft.json.13.0.1.nupkg.sha512"
   ],

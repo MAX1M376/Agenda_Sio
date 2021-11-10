@@ -7,4 +7,4 @@ build_property.PublishSingleFile =
 build_property.IncludeAllContentForSelfExtract = 
 build_property._SupportedPlatformList = Android,iOS,Linux,macOS,Windows
 build_property.RootNamespace = SIO_AgendaWPF
-build_property.ProjectDir = C:\Users\Maxime\Desktop\MAD_Agenda\SIO_AgendaWPF\SIO_AgendaWPF\
+build_property.ProjectDir = C:\Users\Maxime\Documents\Development\Git\Agenda_Sio\SIO_AgendaWPF\
