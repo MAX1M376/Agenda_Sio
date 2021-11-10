@@ -1,0 +1,649 @@
+﻿using SIO_AgendaWPF.Models;
+using SIO_AgendaWPF.Properties;
+using SIO_AgendaWPF.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Threading;
+using Timer = System.Timers.Timer;
+
+namespace SIO_AgendaWPF
+{
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow : Window
+    {
+        private enum Methodes { Selectionner = 0, Ajouter = 1, Modifier = 2 }
+        private IAgendaRepository _Repository;
+        private double _HeightPnlDevoirs;
+        private bool _ShowOld;
+        private Timer _Timer;
+        private List<Grid> _GridDevoirs;
+        private List<Devoir> _ActualDevoirs;
+        private List<Devoir> _Devoirs;
+        private List<Classe> _Classes;
+        private List<Matiere> _Matieres;
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            WindowState = Settings.Default.Maximized ? WindowState.Maximized : WindowState.Normal;
+            Width = Settings.Default.Size.Width; Height = Settings.Default.Size.Height;
+            _ShowOld = Settings.Default.ShowOld;
+
+            _GridDevoirs = new List<Grid>();
+            _Repository = new AgendaRepository();
+
+            var taskDevoirs = Task.Run(() => _Repository.GetDevoirs());
+            while (taskDevoirs.Status != TaskStatus.RanToCompletion) { }
+            _Devoirs = taskDevoirs.Result;
+            _Devoirs.ForEach(x => x.Date += new TimeSpan(23, 59, 59));
+            _ActualDevoirs = _Devoirs;
+
+            var taskClasses = Task.Run(() => _Repository.GetClasses());
+            while (taskClasses.Status != TaskStatus.RanToCompletion) { }
+            _Classes = taskClasses.Result;
+
+            var taskMatieres = Task.Run(() => _Repository.GetMatieres());
+            while (taskMatieres.Status != TaskStatus.RanToCompletion) { }
+            _Matieres = taskMatieres.Result;
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Hauteur du StackPanel du menu
+            _HeightPnlDevoirs = Pnl_MenuDevoirs.ActualHeight;
+            Pnl_MenuDevoirs.Height = 0;
+
+            // Ajouter une classe dans le menu
+            AddClasse(0, "Tous");
+            foreach (var item in _Classes.Where(x => x.Libelle.ToUpper() != "GROUPE A & B").OrderBy(x => x.Libelle).ToArray())
+            {
+                AddClasse(item.Id, item.Libelle);
+            }
+
+            // Button d'afficher les afficher ou pas
+            ((TextBlock)Btn_AfficheOld.Child).Text = _ShowOld ? "Cacher les anciens" : "Montrer les anciens";
+            AfficherDevoirs(_Devoirs);
+            _ActualDevoirs = _Devoirs;
+
+            // Ajouter itmes aux combobox
+            Cmb_Classe.ItemsSource = _Classes.OrderBy(x => x.Libelle).ToArray();
+            Cmb_Matiere.ItemsSource = _Matieres.OrderBy(x => x.Libelle).ToArray();
+
+            // Set timer
+            _Timer = new Timer()
+            {
+                Interval = 10000,
+                Enabled = true
+            };
+            _Timer.Elapsed += Timer_Elapsed;
+        }
+
+        private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            if (_ActualDevoirs.Equals(_Devoirs))
+            {
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (SendOrPostCallback)delegate
+                {
+                    MainWindow wind = Application.Current.MainWindow as MainWindow;
+                    int[] idsSelected = _ActualDevoirs.Where(item => _GridDevoirs.Any(x => int.Parse(((CheckBox)x.Children[0]).Uid) == item.Id && ((CheckBox)x.Children[0]).IsChecked.Value)).Select(y => y.Id).ToArray();
+                    wind.Refresh_MouseDown(sender, null);
+                    wind._GridDevoirs.Where(item => idsSelected.Any(x => x == int.Parse(((CheckBox)item.Children[0]).Uid))).ToList().ForEach(item => ((CheckBox)item.Children[0]).IsChecked = true);
+                }, null);
+            }
+            else
+            {
+                var taskDevoirs = Task.Run(() => _Repository.GetDevoirs());
+                while (taskDevoirs.Status != TaskStatus.RanToCompletion) { }
+                _Devoirs = taskDevoirs.Result;
+                _Devoirs.ForEach(x => x.Date += new TimeSpan(23, 59, 59));
+            }
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            _Timer.Dispose();
+            Settings.Default.Maximized = WindowState == WindowState.Maximized ? true : false;
+            Settings.Default.Size = new System.Drawing.Size((int)RenderSize.Width, (int)RenderSize.Height);
+            Settings.Default.ShowOld = _ShowOld;
+            Settings.Default.Save();
+        }
+
+        #region Search
+        private void Search_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                Search_MouseDown(sender, null);
+            }
+        }
+
+        private void Search_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            Pnl_Devoirs.Focus();
+
+            if (string.IsNullOrEmpty(Txb_Search.Text))
+            {
+                _ActualDevoirs = _Devoirs;
+                AfficherDevoirs(_ActualDevoirs);
+                return;
+            }
+            _ActualDevoirs = _Devoirs.Where(item => item.Matiere.Libelle.ToUpper().StartsWith(Txb_Search.Text.ToUpper())).ToList();
+            if (_ActualDevoirs.Count != 0)
+            {
+                AfficherDevoirs(_ActualDevoirs);
+                return;
+            }
+            
+            _ActualDevoirs = _Devoirs.Where(item => item.Libelle.ToUpper().Contains(Txb_Search.Text.ToUpper())).ToList();
+            AfficherDevoirs(_ActualDevoirs);
+            return;
+        }
+        #endregion
+
+        #region Header
+        private void AddDevoir_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            Txb_Modal.Text = "Ajouter un devoir";
+            Txb_Modal.Uid = ((int)Methodes.Ajouter).ToString();
+            OpenModal(string.Empty, null, null, string.Empty, null, Methodes.Ajouter);
+        }
+
+        private void RestoreDevoir_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            var taskDevoir = Task.Run(() => _Repository.RestoreDevoir());
+            while (taskDevoir.Status != TaskStatus.RanToCompletion) { }
+            if (_ActualDevoirs.Equals(_Devoirs))
+            {
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (SendOrPostCallback)delegate
+                {
+                    MainWindow wind = Application.Current.MainWindow as MainWindow;
+                    int[] idsSelected = _ActualDevoirs.Where(item => _GridDevoirs.Any(x => int.Parse(((CheckBox)x.Children[0]).Uid) == item.Id && ((CheckBox)x.Children[0]).IsChecked.Value)).Select(y => y.Id).ToArray();
+                    wind.Refresh_MouseDown(sender, null);
+                    wind._GridDevoirs.Where(item => idsSelected.Any(x => x == int.Parse(((CheckBox)item.Children[0]).Uid))).ToList().ForEach(item => ((CheckBox)item.Children[0]).IsChecked = true);
+                }, null);
+            }
+            else
+            {
+                var taskDevoirs = Task.Run(() => _Repository.GetDevoirs());
+                while (taskDevoirs.Status != TaskStatus.RanToCompletion) { }
+                _Devoirs = taskDevoirs.Result;
+                _Devoirs.ForEach(x => x.Date += new TimeSpan(23, 59, 59));
+            }
+
+
+        }
+
+        private void DeleteAll_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            var deletedDevs = _ActualDevoirs.Where(item => _GridDevoirs.Any(x => int.Parse(((CheckBox)x.Children[0]).Uid) == item.Id && ((CheckBox)x.Children[0]).IsChecked.Value));
+            MessageBoxResult result = MessageBox.Show($"Voulez supprimer ce{(deletedDevs.Count() <= 1 ? "" : "s")} devoir{(deletedDevs.Count() <= 1 ? "" : "s")} ?", "Supprimer ?", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Yes)
+            {
+                foreach (Devoir item in deletedDevs)
+                {
+                    var taskMatieres = Task.Run(() => _Repository.DeleteDevoirs(item.Id));
+                    while (taskMatieres.Status != TaskStatus.RanToCompletion) { }
+                }
+                _Devoirs.RemoveAll(item => deletedDevs.Any(x => x == item));
+                AfficherDevoirs(_ActualDevoirs);
+            }
+        }
+
+        private void AfficherOld_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            _ShowOld = !_ShowOld;
+            ((TextBlock)Btn_AfficheOld.Child).Text = _ShowOld ? "Cacher les anciens" : "Montrer les anciens";
+            AfficherDevoirs(_ActualDevoirs);
+        }
+        #endregion
+
+        #region Menu
+        private void Classe_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            Btn_Devoirs_MouseDown(sender, e);
+            if (int.Parse(((Border)sender).Uid) == 0)
+            {
+                _ActualDevoirs = _Devoirs;
+                AfficherDevoirs(_ActualDevoirs);
+                return;
+            }
+            string libelle = _Classes.First(item => item.Id == int.Parse(((Border)sender).Uid)).Libelle;
+            if (libelle.ToUpper() == "GROUPE A" || libelle.ToUpper() == "GROUPE B")
+            {
+                _ActualDevoirs = _Devoirs.Where(x => x.Classe.Id == int.Parse(((Border)sender).Uid)).Concat(_Devoirs.Where(item => item.Classe.Libelle.ToUpper() == "GROUPE A & B")).ToList();
+                AfficherDevoirs(_ActualDevoirs);
+                return;
+            }
+            _ActualDevoirs = _Devoirs.Where(x => x.Classe.Id == int.Parse(((Border)sender).Uid)).ToList();
+            AfficherDevoirs(_ActualDevoirs);
+        }
+
+        private void Refresh_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            var taskDevoirs = Task.Run(() => _Repository.GetDevoirs());
+            while (taskDevoirs.Status != TaskStatus.RanToCompletion) { }
+            _Devoirs = taskDevoirs.Result;
+            _Devoirs.ForEach(x => x.Date += new TimeSpan(23, 59, 59));
+            _ActualDevoirs = _Devoirs;
+            AfficherDevoirs(_ActualDevoirs);
+        }
+
+        #endregion
+
+        #region Content
+        private void Devoir_CheckedChange(object sender, RoutedEventArgs e) => Btn_DeleteAll.Visibility = _GridDevoirs.Any(x => ((CheckBox)x.Children[0]).IsChecked.Value) ? Visibility.Visible : Visibility.Collapsed;
+
+        private void Libelle_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            Devoir devSelected = _ActualDevoirs.First(x => x.Id == int.Parse(((TextBlock)sender).Uid));
+            Txb_Modal.Text = "Affiche un devoir";
+            Txb_Modal.Uid = ((int)Methodes.Selectionner).ToString();
+            OpenModal(devSelected.Libelle, devSelected.Matiere, devSelected.Classe, devSelected.Description, devSelected.Date, Methodes.Selectionner);
+        }
+
+        private void Edit_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            Devoir devSelected = _ActualDevoirs.First(x => x.Id == int.Parse(((Border)sender).Uid));
+            Txb_Modal.Text = "Modifier un devoir";
+            Txb_Modal.Uid = ((int)Methodes.Modifier).ToString();
+            Btn_SaveModal.Uid = devSelected.Id.ToString();
+            OpenModal(devSelected.Libelle, devSelected.Matiere, devSelected.Classe, devSelected.Description, devSelected.Date, Methodes.Modifier);
+        }
+
+        private void Delete_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            var deletedDev = _ActualDevoirs.First(item => item.Id == int.Parse(((Border)sender).Uid));
+            MessageBoxResult result = MessageBox.Show("Voulez supprimer ce devoir ?", "Supprimer ?", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Yes)
+            {
+                var taskDel = Task.Run(() => _Repository.DeleteDevoirs(deletedDev.Id));
+                while (taskDel.Status != TaskStatus.RanToCompletion) { }
+                if (!taskDel.Result)
+                {
+                    MessageBox.Show("Test");
+                }
+                _Devoirs.Remove(deletedDev);
+                AfficherDevoirs(_ActualDevoirs);
+            }
+        }
+        #endregion
+
+        #region Modal
+        private void ModalSave_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                ModalSave_MouseDown(sender, null);
+            }
+            if (e.Key == Key.Escape)
+            {
+                Btn_CloseModal(sender, null);
+            }
+        }
+
+        private void ModalSave_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (string.IsNullOrEmpty(Txb_Libelle.Text))
+            {
+                Cvs_Libelle.Visibility = Visibility.Visible;
+                return;
+            }
+            if (Dpc_Date.SelectedDate == null)
+            {
+                Cvs_Date.Visibility = Visibility.Visible;
+                return;
+            }
+            if (Cmb_Classe.SelectedItem == null)
+            {
+                Cvs_Classe.Visibility = Visibility.Visible;
+                return;
+            }
+            if (Cmb_Matiere.SelectedItem == null)
+            {
+                Cvs_Matiere.Visibility = Visibility.Visible;
+                return;
+            }
+
+            var dev = new Devoir
+            {
+                Id = _Devoirs.Max(x => x.Id) + 1,
+                Classe = (Classe)Cmb_Classe.SelectedItem,
+                Matiere = (Matiere)Cmb_Matiere.SelectedItem,
+                Libelle = Txb_Libelle.Text,
+                Description = Txb_Description.Text,
+                Date = Dpc_Date.SelectedDate.Value + new TimeSpan(23, 59, 59)
+            };
+
+            if (int.Parse(Txb_Modal.Uid) == (int)Methodes.Ajouter)
+            {
+                var taskDevoirs = Task.Run(() => _Repository.PostDevoirs(dev));
+                while (taskDevoirs.Status != TaskStatus.RanToCompletion) { }
+                dev.Id = taskDevoirs.Result;
+                _Devoirs.Add(dev);
+            }
+
+            if (int.Parse(Txb_Modal.Uid) == (int)Methodes.Modifier)
+            {
+                _Devoirs.Remove(_ActualDevoirs.First(x => x.Id == int.Parse(Btn_SaveModal.Uid)));
+                dev.Id = int.Parse(Btn_SaveModal.Uid);
+                var taskDevoirs = Task.Run(() => _Repository.UpdateDevoirs(dev.Id, dev));
+                while (taskDevoirs.Status != TaskStatus.RanToCompletion) { }
+                _Devoirs.Add(dev);
+            }
+
+            Cvs_Libelle.Visibility = Visibility.Hidden;
+            Cvs_Description.Visibility = Visibility.Hidden;
+            Cvs_Date.Visibility = Visibility.Hidden;
+            Cvs_Classe.Visibility = Visibility.Hidden;
+            Cvs_Matiere.Visibility = Visibility.Hidden;
+            Bdr_Modal.Visibility = Visibility.Hidden;
+            AfficherDevoirs(_ActualDevoirs);
+        }
+
+        private void Btn_CloseModal(object sender, MouseButtonEventArgs e)
+        {
+            Cvs_Libelle.Visibility = Visibility.Hidden;
+            Cvs_Description.Visibility = Visibility.Hidden;
+            Cvs_Date.Visibility = Visibility.Hidden;
+            Cvs_Classe.Visibility = Visibility.Hidden;
+            Cvs_Matiere.Visibility = Visibility.Hidden;
+            Bdr_Modal.Visibility = Visibility.Hidden;
+        }
+        #endregion
+
+        #region Privee
+        private void OpenModal(string libelle, Matiere matiere, Classe classe, string description, DateTime? date, Methodes editable)
+        {
+            Bdr_Modal.Visibility = Visibility.Visible;
+            ContentModal.Focus();
+            Bdr_FenModal.Uid = ((int)editable).ToString();
+            Btn_SaveModal.Visibility = editable != Methodes.Selectionner ? Visibility.Visible : Visibility.Collapsed;
+            Txb_Libelle.Text = libelle;
+            Dpc_Date.SelectedDate = matiere == null ? null : new DateTime(date.Value.Year, date.Value.Month, date.Value.Day);
+            Cmb_Matiere.SelectedItem = matiere == null ? null : ((Matiere[])Cmb_Matiere.ItemsSource).First(x => x.Id == matiere.Id);
+            Cmb_Classe.SelectedItem = classe == null ? null : ((Classe[])Cmb_Classe.ItemsSource).First(x => x.Id == classe.Id);
+            Txb_Description.Text = description;
+            Txb_Libelle.IsReadOnly = editable == Methodes.Selectionner;
+            Dpc_Date.IsEnabled = editable != Methodes.Selectionner;
+            Cmb_Classe.IsEnabled = editable != Methodes.Selectionner;
+            Cmb_Matiere.IsEnabled = editable != Methodes.Selectionner;
+            Txb_Description.IsReadOnly = editable == Methodes.Selectionner;
+        }
+        private void AddClasse(int id, string libelle)
+        {
+            // Ajout des elements a Pnl_Devoirs
+            var btn = new Border
+            {
+                Uid = id.ToString(),
+                Style = (Style)Resources["ButtonMenuStyle"],
+                Child = new TextBlock() { Style = (Style)Resources["TextBlockMenuStyle"], Text = libelle }
+            };
+            btn.MouseDown += Classe_MouseDown;
+            Pnl_MenuDevoirs.Children.Add(btn);
+
+            // Resize de Pnl_Devoirs
+            Pnl_MenuDevoirs.UpdateLayout();
+            _HeightPnlDevoirs = Pnl_MenuDevoirs.ActualHeight;
+        }
+        private Grid AddDevoir(int id, string libelle, string classe, string matiere, string description, string date, bool isLast)
+        {
+            // Creation de la Grille
+            Grid grid;
+            UIElement gridElement;
+            grid = new Grid() { Height = 60 };
+            grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition());
+            grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
+
+            // Creation du Checkbox
+            gridElement = new CheckBox()
+            {
+                Uid = id.ToString(),
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(10, 0, 10, 0)
+            };
+            ((CheckBox)gridElement).Checked += Devoir_CheckedChange;
+            ((CheckBox)gridElement).Unchecked += Devoir_CheckedChange;
+            Grid.SetColumn(gridElement, 0);
+            grid.Children.Add(gridElement);
+             
+            // Creation du TextBlock du Libelle
+            gridElement = new TextBlock()
+            {
+                Uid = id.ToString(),
+                Text = $"{libelle} - {classe}",
+                VerticalAlignment = VerticalAlignment.Center,
+                FontSize = 14,
+                Foreground = (SolidColorBrush)Resources["TextColor"],
+                Margin = new Thickness(0, 0, 10, 0),
+                Style = (Style)Resources["StyleTextblockLibelle"]
+            };
+            gridElement.MouseDown += Libelle_MouseDown;
+            Grid.SetColumn(gridElement, 1);
+            grid.Children.Add(gridElement);
+
+            // Creation du TextBlock de la Matiere
+            gridElement = new TextBlock()
+            {
+                Uid = id.ToString(),
+                Text = matiere,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                FontSize = 12,
+                Foreground = (SolidColorBrush)Resources["TextLightColor"]
+            };
+            Grid.SetColumn(gridElement, 1);
+            grid.Children.Add(gridElement);
+
+            // Creation du TextBlock de la desciption
+            gridElement = new TextBlock()
+            {
+                Uid = id.ToString(),
+                Text = description,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                TextAlignment = TextAlignment.Center,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 14,
+                Foreground = (SolidColorBrush)Resources["TextColor"]
+            };
+            gridElement = new ScrollViewer()
+            {
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                Visibility = Visibility.Hidden,
+                Margin = new Thickness(5),
+                Style = (Style)Resources["ScrollBarStyleLight"],
+                Content = gridElement
+            };
+            Grid.SetColumn(gridElement, 2);
+            grid.Children.Add(gridElement);
+
+            // Creation du TextBlock de la Date
+            gridElement = new TextBlock()
+            {
+                Uid = id.ToString(),
+                Text = date,
+                VerticalAlignment = VerticalAlignment.Center,
+                FontSize = 14,
+                Foreground = (SolidColorBrush)Resources["TextLightColor"],
+                Margin = new Thickness(10, 0, 0, 0)
+            };
+            Grid.SetColumn(gridElement, 3);
+            grid.Children.Add(gridElement);
+
+            // Creation du bouton Edition
+            gridElement = new Border()
+            {
+                Uid = id.ToString(),
+                Height = 35, Width = 35,
+                Margin = new Thickness(10, 0, 10, 0),
+                Style = (Style)Resources["ButtonStyleInvert"],
+                Child = new TextBlock() { Text = "\xE70F", Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF165ACC")), Style = (Style)Resources["StyleIconContent"] }
+            };
+            gridElement.MouseDown += Edit_MouseDown;
+            Grid.SetColumn(gridElement, 4);
+            grid.Children.Add(gridElement);
+
+            // Creation du bouton Delete
+            gridElement = new Border()
+            {
+                Uid = id.ToString(),
+                Height = 35,
+                Width = 35,
+                Style = (Style)Resources["ButtonStyleInvert"],
+                Child = new TextBlock() { Text = "\xE74D", Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFE0281D")), Style = (Style)Resources["StyleIconContent"] }
+            };
+            gridElement.MouseDown += Delete_MouseDown;
+            Grid.SetColumn(gridElement, 5);
+            grid.Children.Add(gridElement);
+
+            Pnl_Devoirs.Children.Add(new Border() 
+            { 
+                BorderBrush = (SolidColorBrush)Resources["BorderColor"], 
+                BorderThickness = new Thickness(0, 0, 0, isLast ? 0 : 1),
+                Margin = new Thickness(0, 0, 0, isLast ? 30 : 0),
+                Child = grid 
+            });
+            return grid;
+        }
+        private void RefreshDevoir(List<Devoir> devoirs)
+        {
+            int test = Mod((int)DateTime.Now.DayOfWeek + 1, 7);
+            var finSemaine = DateTime.Now.AddDays(6 - test);
+            DateTime dateFinSem = new DateTime(finSemaine.Year, finSemaine.Month, finSemaine.Day) + new TimeSpan(23, 59, 59);
+
+            AddListDevoirs("Déjà fais", devoirs.Where(x => x.Date < DateTime.Now).OrderBy(x => x.Date).ToArray(), "d MMM yy");
+            AddListDevoirs("Cette semaine", devoirs.Where(x => x.Date >= DateTime.Now && x.Date <= dateFinSem).OrderBy(x => x.Date).ToArray(), "dddd");
+            AddListDevoirs("Plus tard", devoirs.Where(x => x.Date > dateFinSem).OrderBy(x => x.Date).ToArray(), "d MMM yy");
+        }
+        private void AddListDevoirs(string titre, Devoir[] devoirs, string format)
+        {
+            if (devoirs.Count() != 0)
+            {
+                Pnl_Devoirs.Children.Add(new TextBlock()
+                {
+                    Text = titre,
+                    Foreground = (SolidColorBrush)Resources["TextColor"],
+                    FontSize = 18
+                });
+            }
+            for (int i = 0; i < devoirs.Count(); i++)
+            {
+                _GridDevoirs.Add(AddDevoir(devoirs[i].Id, devoirs[i].Libelle, devoirs[i].Classe.Libelle, devoirs[i].Matiere.Libelle, devoirs[i].Description, char.ToUpper(devoirs[i].Date.ToString(format)[0]) + devoirs[i].Date.ToString(format).Substring(1), i == devoirs.Count() - 1));
+            }
+        }
+        private void AfficherDevoirs(List<Devoir> devoirs)
+        {
+            if (!_ShowOld)
+            {
+                Pnl_Devoirs.Children.RemoveRange(0, Pnl_Devoirs.Children.Count);
+                var dev_temp = devoirs.Where(x => x.Date >= DateTime.Now).ToList();
+                if (dev_temp.Count == 0)
+                {
+                    _ShowOld = true;
+                    ((TextBlock)Btn_AfficheOld.Child).Text = _ShowOld ? "Cacher les anciens" : "Montrer les anciens";
+                    RefreshDevoir(devoirs);
+                }
+                else
+                {
+                    RefreshDevoir(dev_temp);
+                }
+            }
+            else
+            {
+                Pnl_Devoirs.Children.RemoveRange(0, Pnl_Devoirs.Children.Count);
+                RefreshDevoir(devoirs);
+            }
+            Window_SizeChanged(null, null);
+        }
+        private int Mod(int x, int m)
+        {
+            int r = x % m;
+            return r < 0 ? r + m : r;
+        }
+        #endregion
+
+        #region Style
+        private void Txb_Search_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (((TextBox)sender).Text == "Recherche...")
+            {
+                ((TextBox)sender).Text = "";
+            }
+            ((TextBox)sender).Foreground = (SolidColorBrush)Resources["TextColor"];
+        }
+
+        private void Txb_Search_LostFocus(object sender, RoutedEventArgs e)
+        {
+            #region Style
+            if (((TextBox)sender).Text == "")
+            {
+                ((TextBox)sender).Text = "Recherche...";
+            }
+            ((TextBox)sender).Foreground = (SolidColorBrush)Resources["TextLightColor"];
+            #endregion
+        }
+
+        private void Border_MouseDown(object sender, MouseButtonEventArgs e) => Txb_Search.Focus();
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            Bdr_FenModal.Width = 580;
+            Txb_Search.Width = 260;
+            Col_Menu.Width = new GridLength(250);
+            foreach (Grid item in _GridDevoirs)
+            {
+                ((TextBlock)item.Children[1]).IsEnabled = false;
+                ((ScrollViewer)item.Children[3]).Visibility = Visibility.Visible;
+            }
+
+            if (ActualWidth < 900)
+            {
+                Col_Menu.Width = new GridLength(250);
+                Bdr_FenModal.Width = 540;
+                Txb_Search.Width = 260;
+                foreach (Grid item in _GridDevoirs)
+                {
+                    ((TextBlock)item.Children[1]).IsEnabled = true;
+                    ((ScrollViewer)item.Children[3]).Visibility = Visibility.Hidden;
+                }
+            }
+
+            if (ActualWidth < 650)
+            {
+                Col_Menu.Width = new GridLength(Col_Menu.MinWidth);
+                Bdr_FenModal.Width = 450;
+                Txb_Search.Width = 130;
+            }
+        }
+
+        private void Btn_Devoirs_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            DoubleAnimation doubleAnim = new DoubleAnimation
+            {
+                From = Pnl_MenuDevoirs.Height,
+                To = Pnl_MenuDevoirs.Height == 0 ? _HeightPnlDevoirs : 0,
+                Duration = TimeSpan.FromMilliseconds(200)
+            };
+            Storyboard storyboard = new Storyboard();
+            storyboard.Children.Add(doubleAnim);
+            Storyboard.SetTarget(storyboard, Pnl_MenuDevoirs);
+            Storyboard.SetTargetName(doubleAnim, Pnl_MenuDevoirs.Name);
+            Storyboard.SetTargetProperty(doubleAnim, new PropertyPath(HeightProperty));
+            storyboard.Begin();
+        }
+        #endregion
+    }
+}

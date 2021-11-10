@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# CA1051: Ne pas déclarer de champs d'instances visibles
+dotnet_diagnostic.CA1051.severity = none

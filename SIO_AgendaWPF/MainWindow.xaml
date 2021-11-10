@@ -1,0 +1,844 @@
+﻿<Window x:Class="SIO_AgendaWPF.MainWindow"
+        xmlns:system="clr-namespace:System;assembly=System.Runtime"
+        xmlns:System="clr-namespace:System;assembly=mscorlib"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SIO_AgendaWPF"
+        mc:Ignorable="d"
+        Title="Agenda" 
+        Height="600" Width="800" MinHeight="300" MinWidth="500" 
+        FontFamily="Segoe UI" FontSize="14" Foreground="#FF979797" 
+        WindowStyle="SingleBorderWindow" WindowStartupLocation="CenterScreen"
+        Loaded="Window_Loaded"
+        SizeChanged="Window_SizeChanged"
+        Closing="Window_Closing">
+
+    <!-- Style -->
+
+    <Window.Resources>
+
+        <!--#region Variable -->
+
+        <SolidColorBrush x:Key="TextLightColor">#FF8D8D8D</SolidColorBrush>
+        <SolidColorBrush x:Key="TextColor">LightGray</SolidColorBrush>
+        <SolidColorBrush x:Key="BackColor1">#FF313131</SolidColorBrush>
+        <SolidColorBrush x:Key="BackColor2">#FF383838</SolidColorBrush>
+        <SolidColorBrush x:Key="BackColor1Black">#FF242424</SolidColorBrush>
+        <SolidColorBrush x:Key="BorderColor">#FF4D4D4D</SolidColorBrush>
+        <!--#endregion-->
+
+        <!--#region Style rechercher -->
+
+        <Style x:Key="SearchFocus" TargetType="Border">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Cursor" Value="IBeam" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <!--#endregion-->
+
+        <!--#region Style bouton -->
+
+        <Style x:Key="ButtonStyle" TargetType="{x:Type Border}">
+            <Setter Property="CornerRadius" Value="10" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource BackColor1}" />
+                    <Setter Property="Cursor" Value="Hand" />
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="False">
+                    <Setter Property="Background" Value="Transparent" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ButtonStyleInvert" TargetType="{x:Type Border}">
+            <Setter Property="CornerRadius" Value="10" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource BackColor2}" />
+                    <Setter Property="Cursor" Value="Hand" />
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="False">
+                    <Setter Property="Background" Value="Transparent" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ButtonStyleBlue" TargetType="{x:Type Border}">
+            <Setter Property="CornerRadius" Value="10" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FF1348A0" />
+                    <Setter Property="Cursor" Value="Hand" />
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="False">
+                    <Setter Property="Background" Value="#FF165ACC" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <!--#endregion-->
+
+        <!--#region Style bouton menu-->
+
+        <Style x:Key="ButtonMenuStyle" TargetType="{x:Type Border}">
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Margin" Value="5" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource BackColor1}" />
+                    <Setter Property="Cursor" Value="Hand" />
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="False">
+                    <Setter Property="Background" Value="Transparent" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <!--#endregion-->
+
+        <!--#region Style texte bouton menu -->
+
+        <Style x:Key="TextBlockMenuStyle" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="Margin" Value="15,0,0,0" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{StaticResource TextLightColor}" />
+        </Style>
+        <!--#endregion-->
+
+        <!--#region Style texte icon content -->
+
+        <Style x:Key="StyleIconContent" TargetType="{x:Type TextBlock}">
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <!--#endregion-->
+
+        <!--#region Style texte libelle -->
+
+        <Style x:Key="StyleTextblockLibelle" TargetType="{x:Type TextBlock}">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="TextDecorations" Value="Underline" />
+                    <Setter Property="Cursor" Value="Hand" />
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="False">
+                    <Setter Property="TextDecorations" Value="None" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <!--#endregion-->
+
+        <!--#region Style Scrollbar -->
+
+        <Style x:Key="ScrollThumbs" TargetType="{x:Type Thumb}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate>
+                        <Grid x:Name="Grid">
+                            <Rectangle HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Width="Auto" 
+                                Height="Auto" Fill="Transparent"/>
+                            <Border x:Name="Rectangle1" CornerRadius="10" HorizontalAlignment="Stretch" 
+                                VerticalAlignment="Stretch" Width="Auto" Height="Auto" 
+                                Background="{TemplateBinding Background}"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Tag" Value="Horizontal">
+                                <Setter TargetName="Rectangle1" Property="Width" Value="Auto"/>
+                                <Setter TargetName="Rectangle1" Property="Height" Value="7"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!--SCROLLBARS-->
+        <Style x:Key="ScrollBarBlack" TargetType="{x:Type ScrollBar}">
+            <Setter Property="Stylus.IsFlicksEnabled" Value="False"/>
+            <Setter x:Name="ColorScrollBar" Property="Foreground" Value="{StaticResource BackColor1}"/>
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Grid x:Name="GridRoot" Width="12" Background="{x:Null}">
+                            <Track x:Name="PART_Track" Grid.Row="0" IsDirectionReversed="true" Focusable="False">
+                                <Track.Thumb>
+                                    <Thumb x:Name="Thumb" Background="{TemplateBinding Foreground}" Style="{DynamicResource ScrollThumbs}"/>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton x:Name="PageUp" Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False"/>
+                                </Track.IncreaseRepeatButton>
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton x:Name="PageDown" Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False"/>
+                                </Track.DecreaseRepeatButton>
+                            </Track>
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter TargetName="Thumb" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                            <Trigger Property="Orientation" Value="Horizontal">
+                                <Setter TargetName="GridRoot" Property="LayoutTransform">
+                                    <Setter.Value>
+                                        <RotateTransform Angle="-90"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="PART_Track" Property="LayoutTransform">
+                                    <Setter.Value>
+                                        <RotateTransform Angle="-90"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Width" Value="Auto"/>
+                                <Setter Property="Height" Value="12"/>
+                                <Setter TargetName="Thumb" Property="Tag" Value="Horizontal"/>
+                                <Setter TargetName="PageDown" Property="Command" Value="ScrollBar.PageLeftCommand"/>
+                                <Setter TargetName="PageUp" Property="Command" Value="ScrollBar.PageRightCommand"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ScrollBarLight" TargetType="{x:Type ScrollBar}">
+            <Setter Property="Stylus.IsFlicksEnabled" Value="False"/>
+            <Setter x:Name="ColorScrollBar" Property="Foreground" Value="{StaticResource BackColor2}"/>
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Grid x:Name="GridRoot" Width="12" Background="{x:Null}">
+                            <Track x:Name="PART_Track" Grid.Row="0" IsDirectionReversed="true" Focusable="False">
+                                <Track.Thumb>
+                                    <Thumb x:Name="Thumb" Background="{TemplateBinding Foreground}" Style="{DynamicResource ScrollThumbs}"/>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton x:Name="PageUp" Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False"/>
+                                </Track.IncreaseRepeatButton>
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton x:Name="PageDown" Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False"/>
+                                </Track.DecreaseRepeatButton>
+                            </Track>
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter TargetName="Thumb" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                            <Trigger Property="Orientation" Value="Horizontal">
+                                <Setter TargetName="GridRoot" Property="LayoutTransform">
+                                    <Setter.Value>
+                                        <RotateTransform Angle="-90"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="PART_Track" Property="LayoutTransform">
+                                    <Setter.Value>
+                                        <RotateTransform Angle="-90"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Width" Value="Auto"/>
+                                <Setter Property="Height" Value="12"/>
+                                <Setter TargetName="Thumb" Property="Tag" Value="Horizontal"/>
+                                <Setter TargetName="PageDown" Property="Command" Value="ScrollBar.PageLeftCommand"/>
+                                <Setter TargetName="PageUp" Property="Command" Value="ScrollBar.PageRightCommand"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <ControlTemplate x:Key="ScrollViewerControlTemplateLight" TargetType="{x:Type ScrollViewer}">
+            <Grid x:Name="Grid" Background="{TemplateBinding Background}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Rectangle x:Name="Corner" Grid.Column="1" Fill="{DynamicResource {x:Static SystemColors.ControlBrushKey}}" Grid.Row="1"/>
+                <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" CanContentScroll="{TemplateBinding CanContentScroll}" CanHorizontallyScroll="False" CanVerticallyScroll="False" ContentTemplate="{TemplateBinding ContentTemplate}" Content="{TemplateBinding Content}" Grid.Column="0" Margin="{TemplateBinding Padding}" Grid.Row="0"/>
+                <ScrollBar Style="{StaticResource ScrollBarLight}" x:Name="PART_VerticalScrollBar" AutomationProperties.AutomationId="VerticalScrollBar" Cursor="Arrow" Grid.Column="1" Maximum="{TemplateBinding ScrollableHeight}" Minimum="0" Grid.Row="0" Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" ViewportSize="{TemplateBinding ViewportHeight}"/>
+                <ScrollBar Style="{StaticResource ScrollBarLight}" x:Name="PART_HorizontalScrollBar" AutomationProperties.AutomationId="HorizontalScrollBar" Cursor="Arrow" Grid.Column="0" Maximum="{TemplateBinding ScrollableWidth}" Minimum="0" Orientation="Horizontal" Grid.Row="1" Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}" Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" ViewportSize="{TemplateBinding ViewportWidth}"/>
+            </Grid>
+        </ControlTemplate>
+
+        <ControlTemplate x:Key="ScrollViewerControlTemplateBlack" TargetType="{x:Type ScrollViewer}">
+            <Grid x:Name="Grid" Background="{TemplateBinding Background}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Rectangle x:Name="Corner" Grid.Column="1" Fill="{DynamicResource {x:Static SystemColors.ControlBrushKey}}" Grid.Row="1"/>
+                <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" CanContentScroll="{TemplateBinding CanContentScroll}" CanHorizontallyScroll="False" CanVerticallyScroll="False" ContentTemplate="{TemplateBinding ContentTemplate}" Content="{TemplateBinding Content}" Grid.Column="0" Margin="{TemplateBinding Padding}" Grid.Row="0"/>
+                <ScrollBar Style="{StaticResource ScrollBarBlack}" x:Name="PART_VerticalScrollBar" AutomationProperties.AutomationId="VerticalScrollBar" Cursor="Arrow" Grid.Column="1" Maximum="{TemplateBinding ScrollableHeight}" Minimum="0" Grid.Row="0" Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" ViewportSize="{TemplateBinding ViewportHeight}"/>
+                <ScrollBar Style="{StaticResource ScrollBarBlack}" x:Name="PART_HorizontalScrollBar" AutomationProperties.AutomationId="HorizontalScrollBar" Cursor="Arrow" Grid.Column="0" Maximum="{TemplateBinding ScrollableWidth}" Minimum="0" Orientation="Horizontal" Grid.Row="1" Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}" Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" ViewportSize="{TemplateBinding ViewportWidth}"/>
+            </Grid>
+        </ControlTemplate>
+
+        <Style x:Key="ScrollBarStyleLight" TargetType="{x:Type ScrollViewer}">
+            <Setter Property="Template" Value="{StaticResource ScrollViewerControlTemplateLight}"/>
+        </Style>
+
+        <Style x:Key="ScrollBarStyleBlack" TargetType="{x:Type ScrollViewer}">
+            <Setter Property="Template" Value="{StaticResource ScrollViewerControlTemplateBlack}"/>
+        </Style>
+        <!--#endregion-->
+
+        <!--#region Style Combobox -->
+
+        <ControlTemplate x:Key="ComboBoxToggleButton" TargetType="{x:Type ToggleButton}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="20" />
+                </Grid.ColumnDefinitions>
+
+                <Border
+                    x:Name="Border" 
+                    Grid.ColumnSpan="2"
+                    CornerRadius="5"
+                    Background="{StaticResource BackColor2}"
+                    BorderBrush="#404040"
+                    BorderThickness="0" />
+                <Border 
+                    Grid.Column="0"
+                    CornerRadius="5,0,0,5" 
+                    Margin="1" 
+                    Background="{StaticResource BackColor2}" 
+                    BorderBrush="#404040"
+                    BorderThickness="0,0,0,0" />
+
+                <Path 
+                    x:Name="Arrow"
+                    Grid.Column="1"     
+                    Fill="{StaticResource TextColor}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Data="M 0 0 L 4 4 L 8 0 Z"/>
+            </Grid>
+
+            <ControlTemplate.Triggers>
+                <Trigger Property="ToggleButton.IsMouseOver" Value="true">
+                    <Setter TargetName="Border" Property="Background" Value="{StaticResource BackColor1}" />
+                </Trigger>
+                <Trigger Property="ToggleButton.IsChecked" Value="true">
+                    <Setter TargetName="Border" Property="Background" Value="{StaticResource BackColor1}" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter TargetName="Border" Property="Background" Value="{StaticResource BackColor2}" />
+                    <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource BackColor2}" />
+                    <Setter Property="Foreground" Value="#888888"/>
+                    <Setter TargetName="Arrow" Property="Fill" Value="{StaticResource BackColor2}" />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <ControlTemplate x:Key="ComboBoxTextBox" TargetType="{x:Type TextBox}">
+            <Border x:Name="PART_ContentHost" Focusable="False" Background="{TemplateBinding Background}" />
+        </ControlTemplate>
+
+        <Style x:Key="{x:Type ComboBox}" TargetType="{x:Type ComboBox}">
+            <Setter Property="SnapsToDevicePixels" Value="true"/>
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.CanContentScroll" Value="true"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="MinHeight" Value="20"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBox}">
+                        <Grid>
+                            <ToggleButton 
+                                Name="ToggleButton" 
+                                Template="{StaticResource ComboBoxToggleButton}" 
+                                Grid.Column="2" 
+                                Focusable="false"
+                                IsChecked="{Binding Path=IsDropDownOpen,Mode=TwoWay,RelativeSource={RelativeSource TemplatedParent}}"
+                                ClickMode="Press">
+                            </ToggleButton>
+                            <ContentPresenter
+                                Name="ContentSite"
+                                IsHitTestVisible="False" 
+                                Content="{TemplateBinding SelectionBoxItem}"
+                                ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                Margin="3,3,23,3"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Left" />
+                            <TextBox x:Name="PART_EditableTextBox"
+                                Style="{x:Null}" 
+                                Template="{StaticResource ComboBoxTextBox}" 
+                                HorizontalAlignment="Left" 
+                                VerticalAlignment="Center" 
+                                Margin="3,3,23,3"
+                                Focusable="True" 
+                                Background="Transparent"
+                                Visibility="Hidden"
+                                IsReadOnly="{TemplateBinding IsReadOnly}"/>
+                            <Popup 
+                                Name="Popup"
+                                Placement="Bottom"
+                                IsOpen="{TemplateBinding IsDropDownOpen}"
+                                AllowsTransparency="True" 
+                                Focusable="False"
+                                PopupAnimation="Slide">
+                                <Grid 
+                                    Name="DropDown"
+                                    SnapsToDevicePixels="True"                
+                                    MinWidth="{TemplateBinding ActualWidth}"
+                                    MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <Border 
+                                        x:Name="DropDownBorder"
+                                        Background="{StaticResource BackColor1}"
+                                        BorderThickness="0"
+                                        BorderBrush="#888888"/>
+                                    <ScrollViewer Margin="4,6,4,6" SnapsToDevicePixels="True">
+                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" />
+                                    </ScrollViewer>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="HasItems" Value="false">
+                                <Setter TargetName="DropDownBorder" Property="MinHeight" Value="95"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Foreground" Value="#888888"/>
+                            </Trigger>
+                            <Trigger Property="IsGrouping" Value="true">
+                                <Setter Property="ScrollViewer.CanContentScroll" Value="false"/>
+                            </Trigger>
+                            <Trigger SourceName="Popup" Property="Popup.AllowsTransparency" Value="true">
+                                <Setter TargetName="DropDownBorder" Property="CornerRadius" Value="5"/>
+                                <Setter TargetName="DropDownBorder" Property="Margin" Value="0,2,0,0"/>
+                            </Trigger>
+                            <Trigger Property="IsEditable" Value="true">
+                                <Setter Property="IsTabStop" Value="false"/>
+                                <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="ContentSite" Property="Visibility" Value="Hidden"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+            </Style.Triggers>
+        </Style>
+
+        <!-- SimpleStyles: ComboBoxItem -->
+        <Style x:Key="{x:Type ComboBoxItem}" TargetType="{x:Type ComboBoxItem}">
+            <Setter Property="SnapsToDevicePixels" Value="true"/>
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBoxItem}">
+                        <Border Name="Border" Padding="2" SnapsToDevicePixels="true">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="true">
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource BackColor1Black}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Foreground" Value="#888888"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!--#endregion-->
+
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="60" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+
+        <!--#region Header -->
+
+        <Border BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderColor}" Background="{StaticResource BackColor1}" />
+
+        <Label Content="BTS SIO" 
+               HorizontalAlignment="Left" VerticalAlignment="Center"
+               Margin="40,0,20,0"
+               Foreground="{StaticResource TextColor}" 
+               FontSize="28" 
+               FontWeight="Bold"/>
+
+        <!--#region Header : Search -->
+        <Grid HorizontalAlignment="Center" Margin="0,10" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" 
+                    Grid.ColumnSpan="2" 
+                    CornerRadius="10" 
+                    Background="{StaticResource BackColor2}" 
+                    Style="{StaticResource SearchFocus}" 
+                    MouseDown="Border_MouseDown" />
+
+            <TextBox x:Name="Txb_Search"
+                Width="150"
+                Background="Transparent"
+                Foreground="{StaticResource TextLightColor}"
+                BorderThickness="0"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Left"
+                FontSize="16"
+                Text="Recherche..." 
+                TextAlignment="Center"
+                AutoWordSelection="True"
+                GotFocus="Txb_Search_GotFocus"
+                LostFocus="Txb_Search_LostFocus"
+                KeyDown="Search_KeyDown"/>
+
+            <Border x:Name="Btn_Search"
+                Grid.Column="1"
+                Height="30" Width="30" Margin="0,0,5,0"
+                HorizontalAlignment="Left" VerticalAlignment="Center"
+                Style="{StaticResource ButtonStyle}"
+                MouseDown="Search_MouseDown">
+                <TextBlock 
+                    Text="&#xE71E;" FontFamily="Segoe MDL2 Assets" Foreground="{StaticResource TextColor}" FontSize="18"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    />
+            </Border>
+
+        </Grid>
+        <!--#endregion-->
+
+        <!--#endregion-->
+
+        <!--#region Body -->
+
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="50" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="Col_Menu" Width="250" MinWidth="150" MaxWidth="380" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+
+            <Border BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderColor}" Grid.Row="0" Grid.Column="0" Background="{StaticResource BackColor2}" />
+            <Border BorderThickness="0,0,0,0" BorderBrush="{StaticResource BorderColor}" Grid.Row="1" Grid.Column="0" Background="{DynamicResource BackColor2}" />
+
+            <Border BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderColor}" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Background="{StaticResource BackColor1}" />
+            <Border BorderThickness="0,0,0,0" BorderBrush="{StaticResource BorderColor}" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Background="{StaticResource BackColor1}" />
+
+            <!--#region Menu : Header -->
+
+            <Label Content="Agenda" 
+               HorizontalAlignment="Left" VerticalAlignment="Center"
+               Margin="25,0,0,0"
+               Foreground="{StaticResource TextColor}" 
+               FontSize="18" 
+               FontWeight="Bold"
+               />
+
+            <Border x:Name="Btn_Refresh"
+                Grid.Column="0"
+                Height="40" Width="40" Margin="0,0,5,0"
+                HorizontalAlignment="Right" VerticalAlignment="Center"
+                Style="{StaticResource ButtonStyle}"
+                MouseDown="Refresh_MouseDown">
+                <TextBlock 
+                    Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" Foreground="{StaticResource TextColor}" FontSize="20"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    />
+            </Border>
+            <!--#endregion-->
+
+            <!--#region Menu : Content -->
+
+            <StackPanel Margin="0,15,0,0" Orientation="Vertical" Grid.Row="1" Grid.Column="0" >
+
+                <Border x:Name="Btn_Devoirs"
+                    Height="40" Margin="5"
+                    HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                    Style="{StaticResource ButtonStyle}"
+                    MouseDown="Btn_Devoirs_MouseDown">
+                    <TextBlock 
+                        Text="Classes"
+                        Focusable="False"
+                        VerticalAlignment="Center" HorizontalAlignment="Center"
+                        FontSize="16" Foreground="{StaticResource TextColor}" />
+                </Border>
+
+                <StackPanel x:Name="Pnl_MenuDevoirs" VerticalAlignment="Top" Orientation="Vertical" Background="{StaticResource BackColor1Black}" Visibility="Visible">
+                    <!-- Ajout des ellement un c# -->
+                </StackPanel>
+            </StackPanel>
+            <!--#endregion-->
+
+            <!--#region Splitter -->
+
+            <GridSplitter 
+                HorizontalAlignment="Stretch" 
+                Grid.RowSpan="2" Grid.Row="0" 
+                Grid.Column="1"
+                Width="6" 
+                Background="{DynamicResource BorderColor}" 
+                BorderBrush="Transparent" BorderThickness="0,0,5,0"/>
+            <!--#endregion-->
+
+            <!--#region Content : Header -->
+
+            <Border x:Name="Btn_Ajouter"
+                Grid.Column="2"
+                Height="40" Width="40"
+                HorizontalAlignment="Left" VerticalAlignment="Center"
+                Style="{StaticResource ButtonStyleInvert}"
+                    MouseDown="AddDevoir_MouseDown">
+                <TextBlock 
+                    Text="&#xE710;" FontFamily="Segoe MDL2 Assets" Foreground="{StaticResource TextColor}" FontSize="20"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,5,0">
+                <Border x:Name="Btn_AfficheOld"
+                    Height="40"
+                    Style="{StaticResource ButtonStyleInvert}"
+                    MouseDown="AfficherOld_MouseDown">
+                    <TextBlock 
+                        Text="Cacher les anciens" Foreground="{StaticResource TextColor}" FontSize="16"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"  Margin="15,0" />
+                </Border>
+                
+                <Border x:Name="Btn_DeleteAll"
+                    Visibility="Collapsed"
+                    Height="40" Width="40" Margin="0,0,5,0"
+                    Style="{StaticResource ButtonStyleInvert}"
+                    MouseDown="DeleteAll_MouseDown">
+                    <TextBlock 
+                        Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" Foreground="#FFE0281D" FontSize="20"
+                        HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </StackPanel>
+            
+            <!--#endregion-->
+
+            <!--#region Content : Content-->
+
+            <ScrollViewer Grid.Row="1" Grid.Column="2" VerticalScrollBarVisibility="Auto" Style="{StaticResource ScrollBarStyleLight}" Margin="0,5">
+                <StackPanel x:Name="Pnl_Devoirs" Orientation="Vertical" Margin=" 25,10,30,10">
+                    <!--Ajouter les devoirs-->
+                </StackPanel>
+            </ScrollViewer>
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <Border x:Name="Btn_Ajouter_Copy" 
+                    Height="40" Width="40"
+                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                    Style="{StaticResource ButtonStyleInvert}"
+                    MouseDown="AddDevoir_MouseDown">
+                    <TextBlock 
+                        Text="&#xE710;" FontFamily="Segoe MDL2 Assets" Foreground="{StaticResource TextColor}" FontSize="20"
+                        HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+
+                <Border x:Name="Btn_Restore"
+                    Height="40" Width="40" Margin="5,0,0,0"
+                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                    Style="{StaticResource ButtonStyleInvert}"
+                    MouseDown="RestoreDevoir_MouseDown">
+                    <TextBlock 
+                        Text="&#xE7A7;" FontFamily="Segoe MDL2 Assets" Foreground="{StaticResource TextColor}" FontSize="20"
+                        HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </StackPanel>
+            <!--#endregion-->
+
+        </Grid>
+        <!--#endregion-->
+
+        <!--#region Modal -->
+
+        <Border x:Name="Bdr_Modal" Grid.RowSpan="2" Background="#66000000" Visibility="Hidden">
+            <Border 
+                x:Name="Bdr_FenModal" 
+                CornerRadius="10" Background="{StaticResource BackColor2}"
+                VerticalAlignment="Stretch" Width="450" MaxHeight="620" Margin="0,30">
+                <Grid >
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!--#region Modal : Header -->
+
+                    <TextBlock
+                        x:Name="Txb_Modal"
+                        Text="Devoir" FontSize="16" Foreground="{StaticResource TextColor}"
+                        VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10,0,0,0" />
+
+                    <Border
+                        Margin="0,5,5,0" Height="30" Width="30"
+                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Style="{StaticResource ButtonStyle}"
+                        MouseDown="Btn_CloseModal">
+                        <TextBlock 
+                            Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="18" Foreground="{StaticResource TextColor}"
+                            VerticalAlignment="Center" HorizontalAlignment="Center" />
+                    </Border>
+                    <!--#endregion-->
+
+                    <!--#region Modal : Content -->
+
+                    <ScrollViewer x:Name="ContentModal" Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,10,0,5" Style="{StaticResource ScrollBarStyleBlack}" KeyDown="ModalSave_KeyDown">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0" Margin="60,00" VerticalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="50" />
+                                    <RowDefinition Height="50" />
+                                    <RowDefinition Height="50" />
+                                    <RowDefinition Height="50" />
+                                    <RowDefinition MinHeight="150" />
+                                </Grid.RowDefinitions>
+
+                                <Border Grid.Row="0" Grid.ColumnSpan="2" BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderColor}" />
+                                <Border Grid.Row="1" Grid.ColumnSpan="2" BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderColor}" />
+                                <Border Grid.Row="2" Grid.ColumnSpan="2" BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderColor}" />
+                                <Border Grid.Row="3" Grid.ColumnSpan="2" BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderColor}" />
+                                <Border Grid.Row="0" Grid.RowSpan="5" BorderThickness="0,0,1,0" BorderBrush="{StaticResource BorderColor}" />
+
+                                <TextBlock
+                                    Grid.Row="0" Grid.Column="0"
+                                    Text="Libellé" FontSize="14" Foreground="{StaticResource TextLightColor}"
+                                    VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,20,0" />
+
+                                <TextBox
+                                    x:Name="Txb_Libelle"
+                                    Grid.Row="0" Grid.Column="1" Background="Transparent" BorderThickness="0"
+                                    Text="Devoir" FontSize="14" Foreground="{StaticResource TextColor}"
+                                    VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="20,0,0,0" />
+
+                                <Canvas x:Name="Cvs_Libelle" Grid.Row="0" Grid.Column="1" Width="20" Height="20" HorizontalAlignment="Right" Margin="0,0,-25,0" Visibility="Hidden">
+                                    <TextBlock 
+                                        Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="#FFE0281D"
+                                        Canvas.Left="2" Canvas.Top="2" />
+                                </Canvas>
+
+                                <TextBlock
+                                    Grid.Row="1" Grid.Column="0"
+                                    Text="À faire pour le" FontSize="14" Foreground="{StaticResource TextLightColor}"
+                                    VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,20,0" />
+
+                                <DatePicker 
+                                    x:Name="Dpc_Date"
+                                    Grid.Row="1" Grid.Column="1" 
+                                    BorderThickness="0"
+                                    Foreground="{StaticResource BackColor1Black}" 
+                                    HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,0,0,0" 
+                                    VerticalContentAlignment="Center" HorizontalContentAlignment="Left" FirstDayOfWeek="Monday" />
+
+                                <Canvas x:Name="Cvs_Date" Grid.Row="1" Grid.Column="1" Width="20" Height="20" HorizontalAlignment="Right" Margin="0,0,-25,0" Visibility="Hidden">
+                                    <TextBlock 
+                                        Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="#FFE0281D"
+                                        Canvas.Left="2" Canvas.Top="2" />
+                                </Canvas>
+                                
+                                <TextBlock
+                                    Grid.Row="2" Grid.Column="0"
+                                    Text="Pour" FontSize="14" Foreground="{StaticResource TextLightColor}"
+                                    VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,20,0" />
+
+                                <ComboBox x:Name="Cmb_Classe" Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="20,0,0,0" Foreground="{StaticResource TextColor}">
+                                </ComboBox>
+
+                                <Canvas x:Name="Cvs_Classe" Grid.Row="2" Grid.Column="1" Width="20" Height="20" HorizontalAlignment="Right" Margin="0,0,-25,0" Visibility="Hidden">
+                                    <TextBlock 
+                                        Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="#FFE0281D"
+                                        Canvas.Left="2" Canvas.Top="2" />
+                                </Canvas>
+
+                                <TextBlock
+                                    Grid.Row="3" Grid.Column="0"
+                                    Text="En" FontSize="14" Foreground="{StaticResource TextLightColor}"
+                                    VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,20,0" />
+
+                                <ComboBox x:Name="Cmb_Matiere" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="20,0,0,0" Foreground="{StaticResource TextColor}">
+                                </ComboBox>
+
+                                <Canvas x:Name="Cvs_Matiere" Grid.Row="3" Grid.Column="1" Width="20" Height="20" HorizontalAlignment="Right" Margin="0,0,-25,0" Visibility="Hidden">
+                                    <TextBlock 
+                                        Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="#FFE0281D"
+                                        Canvas.Left="2" Canvas.Top="2" />
+                                </Canvas>
+
+                                <TextBlock
+                                    Grid.Row="4" Grid.Column="0"
+                                    Text="Description" FontSize="14" Foreground="{StaticResource TextLightColor}"
+                                    VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,20,0" />
+
+                                <TextBox 
+                                    x:Name="Txb_Description"
+                                    Grid.Row="4" Grid.Column="1" Background="Transparent" BorderThickness="0"
+                                    Text="Description devoir zzeiofh zeofihzf oizehf" FontSize="14" Foreground="{StaticResource TextColor}"
+                                    VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="20,15,0,0" TextWrapping="Wrap" />
+
+                                <Canvas x:Name="Cvs_Description" Grid.Row="4" Grid.Column="1" Width="20" Height="20" HorizontalAlignment="Right" Margin="0,0,-25,0" Visibility="Hidden">
+                                    <TextBlock 
+                                        Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="#FFE0281D"
+                                        Canvas.Left="2" Canvas.Top="2" />
+                                </Canvas>
+                            </Grid>
+
+                            <Border
+                                x:Name="Btn_SaveModal"
+                                Grid.Row="1" Visibility="Visible"
+                                Margin="0,0,5,0"
+                                HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                Style="{StaticResource ButtonStyleBlue}"
+                                MouseDown="ModalSave_MouseDown">
+                                <TextBlock 
+                                    Text="Enregistrer" FontSize="16" Foreground="{StaticResource TextColor}"
+                                    VerticalAlignment="Center" HorizontalAlignment="Center" Margin="15,5" />
+                            </Border>
+                        </Grid>
+                    </ScrollViewer>
+                    <!--#endregion-->
+
+                </Grid>
+            </Border>
+        </Border>
+        <!--#endregion-->
+
+    </Grid>
+</Window>

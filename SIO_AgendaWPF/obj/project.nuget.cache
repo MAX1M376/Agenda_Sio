@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "UWCXeJStXPQzTfsguhcuUl4M1NCFHeaSNYhnGB5Q3hGNHdXio3tviwHFmxOfzJ6+v0V5IvV9F8tLHnZpF5sM3A==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Maxime\\Desktop\\MAD_Agenda\\SIO_AgendaWPF\\SIO_AgendaWPF\\SIO_AgendaWPF.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Maxime\\.nuget\\packages\\newtonsoft.json\\13.0.1\\newtonsoft.json.13.0.1.nupkg.sha512"
+  ],
+  "logs": []
+}
