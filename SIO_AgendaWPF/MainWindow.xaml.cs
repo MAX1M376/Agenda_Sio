@@ -347,8 +347,6 @@ namespace SIO_AgendaWPF
                 var taskMatieres = Task.Run(() => _Repository.GetMatieres());
                 while (taskMatieres.Status != TaskStatus.RanToCompletion) { }
                 _Matieres = taskMatieres.Result;
-
-                Thread.Sleep(500);
             });
 
             Task.Factory.ContinueWhenAll(new[] { taskOnLoad }, x =>
