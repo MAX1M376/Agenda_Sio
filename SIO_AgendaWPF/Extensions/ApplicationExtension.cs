@@ -9,13 +9,17 @@ namespace SIO_AgendaWPF.Extensions
 {
     public static class ApplicationExtension
     {
-		public static void ExecOnUiThread(this Application app, Action action)
-		{
-			var dispatcher = app.Dispatcher;
-			if (dispatcher.CheckAccess())
-				action();
-			else
-				dispatcher.BeginInvoke(action);
-		}
-	}
+        public static void ExecOnUiThread(this Application app, Action action)
+        {
+            System.Windows.Threading.Dispatcher dispatcher = app.Dispatcher;
+            if (dispatcher.CheckAccess())
+            {
+                action();
+            }
+            else
+            {
+                dispatcher.BeginInvoke(action);
+            }
+        }
+    }
 }

@@ -297,6 +297,14 @@
 
         <Style x:Key="ScrollBarStyleLight" TargetType="{x:Type ScrollViewer}">
             <Setter Property="Template" Value="{StaticResource ScrollViewerControlTemplateLight}"/>
+            <Style.Triggers>
+                <Trigger Property="ComputedVerticalScrollBarVisibility" Value="Collapsed">
+                    <Setter Property="IsEnabled" Value="False"/>
+                </Trigger>
+                <Trigger Property="ComputedVerticalScrollBarVisibility" Value="Visible">
+                    <Setter Property="IsEnabled" Value="True"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <Style x:Key="ScrollBarStyleBlack" TargetType="{x:Type ScrollViewer}">
