@@ -623,36 +623,27 @@
                     HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Border>
 
-            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,5,0">
-                <Border x:Name="Btn_AfficheOld"
-                    Height="40"
-                    Style="{StaticResource ButtonStyleInvert}"
-                    MouseDown="AfficherOld_MouseDown">
-                    <TextBlock 
-                        Text="Cacher les anciens" Foreground="{StaticResource TextColor}" FontSize="16"
-                        HorizontalAlignment="Center" VerticalAlignment="Center"  Margin="15,0" />
-                </Border>
-                
-                <Border x:Name="Btn_DeleteAll"
-                    Visibility="Collapsed"
-                    Height="40" Width="40" Margin="0,0,5,0"
-                    Style="{StaticResource ButtonStyleInvert}"
-                    MouseDown="DeleteAll_MouseDown">
-                    <TextBlock 
-                        Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" Foreground="#FFE0281D" FontSize="20"
-                        HorizontalAlignment="Center" VerticalAlignment="Center" />
-                </Border>
-            </StackPanel>
-            
+            <Border x:Name="Btn_AfficheOld"
+                Grid.Column="2"
+                Height="40" Margin="0,0,5,0"
+                HorizontalAlignment="Right" VerticalAlignment="Center"
+                Style="{StaticResource ButtonStyleInvert}"
+                MouseDown="AfficherOld_MouseDown">
+                <TextBlock 
+                    Text="Cacher les anciens" Foreground="{StaticResource TextColor}" FontSize="16"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"  Margin="15,0" />
+            </Border>
             <!--#endregion-->
 
             <!--#region Content : Content-->
 
             <ScrollViewer Grid.Row="1" Grid.Column="2" VerticalScrollBarVisibility="Auto" Style="{StaticResource ScrollBarStyleLight}" Margin="0,5">
-                <StackPanel x:Name="Pnl_Devoirs" Orientation="Vertical" Margin=" 25,10,30,10">
+                <StackPanel Orientation="Vertical" Margin=" 25,10,30,10">
                     <TextBlock x:Name="Txb_Chargement" Text="Chargement..." TextWrapping="Wrap" HorizontalAlignment="Center" Margin="0,100" Foreground="{DynamicResource TextLightColor}" VerticalAlignment="Top" FontSize="36" Visibility="Hidden"/>
+                    <StackPanel x:Name="Pnl_Devoirs" Orientation="Vertical">
 
-                    <!--Ajouter les devoirs-->
+                        <!--Ajouter les devoirs-->
+                    </StackPanel>
                 </StackPanel>
             </ScrollViewer>
             <StackPanel Grid.Column="2" Orientation="Horizontal">

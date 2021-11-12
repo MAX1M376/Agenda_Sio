@@ -27,11 +27,15 @@ namespace SIO_AgendaWPF
         private double _HeightPnlDevoirs;
         private bool _ShowOld;
         private Timer _Timer;
-        private List<Grid> _GridDevoirs;
         private List<Devoir> _ActualDevoirs;
         private List<Devoir> _Devoirs;
         private List<Classe> _Classes;
         private List<Matiere> _Matieres;
+        public List<Grid> GridElements
+        {
+            get { return Pnl_Devoirs.Children.Cast<UIElement>().Where(item => item is Border).Select(item => ((Border)item).Child as Grid).ToList(); }
+        }
+
 
         public MainWindow()
         {
@@ -39,7 +43,6 @@ namespace SIO_AgendaWPF
             WindowState = Settings.Default.Maximized ? WindowState.Maximized : WindowState.Normal;
             Width = Settings.Default.Size.Width; Height = Settings.Default.Size.Height;
             _ShowOld = Settings.Default.ShowOld;
-            _GridDevoirs = new List<Grid>();
             _Repository = new AgendaRepository();
         }
 
@@ -65,13 +68,11 @@ namespace SIO_AgendaWPF
         {
             if (_ActualDevoirs.Equals(_Devoirs))
             {
-                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (SendOrPostCallback)delegate
+                Application.Current.ExecOnUiThread(() => 
                 {
-                    MainWindow wind = Application.Current.MainWindow as MainWindow;
-                    int[] idsSelected = _ActualDevoirs.Where(item => _GridDevoirs.Any(x => int.Parse(((CheckBox)x.Children[0]).Uid) == item.Id && ((CheckBox)x.Children[0]).IsChecked.Value)).Select(y => y.Id).ToArray();
                     LoadDataComponents(false);
-                    wind._GridDevoirs.Where(item => idsSelected.Any(x => x == int.Parse(((CheckBox)item.Children[0]).Uid))).ToList().ForEach(item => ((CheckBox)item.Children[0]).IsChecked = true);
-                }, null);
+                });
+                
             }
             else
             {
@@ -137,13 +138,11 @@ namespace SIO_AgendaWPF
             while (taskDevoir.Status != TaskStatus.RanToCompletion) { }
             if (_ActualDevoirs.Equals(_Devoirs))
             {
-                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (SendOrPostCallback)delegate
+                Application.Current.ExecOnUiThread(() =>
                 {
                     MainWindow wind = Application.Current.MainWindow as MainWindow;
-                    int[] idsSelected = _ActualDevoirs.Where(item => _GridDevoirs.Any(x => int.Parse(((CheckBox)x.Children[0]).Uid) == item.Id && ((CheckBox)x.Children[0]).IsChecked.Value)).Select(y => y.Id).ToArray();
                     wind.Refresh_MouseDown(sender, null);
-                    wind._GridDevoirs.Where(item => idsSelected.Any(x => x == int.Parse(((CheckBox)item.Children[0]).Uid))).ToList().ForEach(item => ((CheckBox)item.Children[0]).IsChecked = true);
-                }, null);
+                });
             }
             else
             {
@@ -151,22 +150,6 @@ namespace SIO_AgendaWPF
                 while (taskDevoirs.Status != TaskStatus.RanToCompletion) { }
                 _Devoirs = taskDevoirs.Result;
                 _Devoirs.ForEach(x => x.Date += new TimeSpan(23, 59, 59));
-            }
-        }
-
-        private void DeleteAll_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            var deletedDevs = _ActualDevoirs.Where(item => _GridDevoirs.Any(x => int.Parse(((CheckBox)x.Children[0]).Uid) == item.Id && ((CheckBox)x.Children[0]).IsChecked.Value));
-            MessageBoxResult result = MessageBox.Show($"Voulez supprimer ce{(deletedDevs.Count() <= 1 ? "" : "s")} devoir{(deletedDevs.Count() <= 1 ? "" : "s")} ?", "Supprimer ?", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (result == MessageBoxResult.Yes)
-            {
-                foreach (Devoir item in deletedDevs)
-                {
-                    var taskMatieres = Task.Run(() => _Repository.DeleteDevoirs(item.Id));
-                    while (taskMatieres.Status != TaskStatus.RanToCompletion) { }
-                }
-                _Devoirs.RemoveAll(item => deletedDevs.Any(x => x == item));
-                AfficherDevoirs(_ActualDevoirs);
             }
         }
 
@@ -207,8 +190,6 @@ namespace SIO_AgendaWPF
         #endregion
 
         #region Content
-        private void Devoir_CheckedChange(object sender, RoutedEventArgs e) => Btn_DeleteAll.Visibility = _GridDevoirs.Any(x => ((CheckBox)x.Children[0]).IsChecked.Value) ? Visibility.Visible : Visibility.Collapsed;
-
         private void Libelle_MouseDown(object sender, MouseButtonEventArgs e)
         {
             Devoir devSelected = _ActualDevoirs.First(x => x.Id == int.Parse(((TextBlock)sender).Uid));
@@ -234,10 +215,6 @@ namespace SIO_AgendaWPF
             {
                 var taskDel = Task.Run(() => _Repository.DeleteDevoirs(deletedDev.Id));
                 while (taskDel.Status != TaskStatus.RanToCompletion) { }
-                if (!taskDel.Result)
-                {
-                    MessageBox.Show("Test");
-                }
                 _Devoirs.Remove(deletedDev);
                 AfficherDevoirs(_ActualDevoirs);
             }
@@ -418,38 +395,42 @@ namespace SIO_AgendaWPF
             UIElement gridElement;
             grid = new Grid() { Height = 60 };
             grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
-            grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
             grid.ColumnDefinitions.Add(new ColumnDefinition());
             grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
             grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
             grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
 
-            // Creation du Checkbox
-            gridElement = new CheckBox()
+            var stackPanelLibelle = new StackPanel()
             {
-                Uid = id.ToString(),
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(10, 0, 10, 0)
+                Orientation = Orientation.Horizontal
             };
-            ((CheckBox)gridElement).Checked += Devoir_CheckedChange;
-            ((CheckBox)gridElement).Unchecked += Devoir_CheckedChange;
-            Grid.SetColumn(gridElement, 0);
-            grid.Children.Add(gridElement);
-             
+
             // Creation du TextBlock du Libelle
             gridElement = new TextBlock()
             {
                 Uid = id.ToString(),
-                Text = $"{libelle} - {classe}",
+                Text = libelle,
                 VerticalAlignment = VerticalAlignment.Center,
                 FontSize = 14,
                 Foreground = (SolidColorBrush)Resources["TextColor"],
-                Margin = new Thickness(0, 0, 10, 0),
                 Style = (Style)Resources["StyleTextblockLibelle"]
             };
             gridElement.MouseDown += Libelle_MouseDown;
-            Grid.SetColumn(gridElement, 1);
-            grid.Children.Add(gridElement);
+            stackPanelLibelle.Children.Add(gridElement);
+
+            gridElement = new TextBlock()
+            {
+                Uid = id.ToString(),
+                Text = $" - {classe}",
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 10, 0),
+                FontSize = 14,
+                Foreground = (SolidColorBrush)Resources["TextLightColor"]
+            };
+            stackPanelLibelle.Children.Add(gridElement);
+
+            Grid.SetColumn(stackPanelLibelle, 0);
+            grid.Children.Add(stackPanelLibelle);
 
             // Creation du TextBlock de la Matiere
             gridElement = new TextBlock()
@@ -460,7 +441,7 @@ namespace SIO_AgendaWPF
                 FontSize = 12,
                 Foreground = (SolidColorBrush)Resources["TextLightColor"]
             };
-            Grid.SetColumn(gridElement, 1);
+            Grid.SetColumn(gridElement, 0);
             grid.Children.Add(gridElement);
 
             // Creation du TextBlock de la desciption
@@ -477,13 +458,14 @@ namespace SIO_AgendaWPF
             };
             gridElement = new ScrollViewer()
             {
+                HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 Visibility = Visibility.Hidden,
                 Margin = new Thickness(5),
                 Style = (Style)Resources["ScrollBarStyleLight"],
                 Content = gridElement
             };
-            Grid.SetColumn(gridElement, 2);
+            Grid.SetColumn(gridElement, 1);
             grid.Children.Add(gridElement);
 
             // Creation du TextBlock de la Date
@@ -496,7 +478,7 @@ namespace SIO_AgendaWPF
                 Foreground = (SolidColorBrush)Resources["TextLightColor"],
                 Margin = new Thickness(10, 0, 0, 0)
             };
-            Grid.SetColumn(gridElement, 3);
+            Grid.SetColumn(gridElement, 2);
             grid.Children.Add(gridElement);
 
             // Creation du bouton Edition
@@ -509,7 +491,7 @@ namespace SIO_AgendaWPF
                 Child = new TextBlock() { Text = "\xE70F", Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF165ACC")), Style = (Style)Resources["StyleIconContent"] }
             };
             gridElement.MouseDown += Edit_MouseDown;
-            Grid.SetColumn(gridElement, 4);
+            Grid.SetColumn(gridElement, 3);
             grid.Children.Add(gridElement);
 
             // Creation du bouton Delete
@@ -522,14 +504,14 @@ namespace SIO_AgendaWPF
                 Child = new TextBlock() { Text = "\xE74D", Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFE0281D")), Style = (Style)Resources["StyleIconContent"] }
             };
             gridElement.MouseDown += Delete_MouseDown;
-            Grid.SetColumn(gridElement, 5);
+            Grid.SetColumn(gridElement, 4);
             grid.Children.Add(gridElement);
 
             Pnl_Devoirs.Children.Add(new Border() 
-            { 
+            {
                 BorderBrush = (SolidColorBrush)Resources["BorderColor"], 
                 BorderThickness = new Thickness(0, 0, 0, isLast ? 0 : 1),
-                Margin = new Thickness(0, 0, 0, isLast ? 30 : 0),
+                Margin = new Thickness(30, 0, 0, isLast ? 30 : 0),
                 Child = grid 
             });
             return grid;
@@ -557,12 +539,12 @@ namespace SIO_AgendaWPF
             }
             for (int i = 0; i < devoirs.Count(); i++)
             {
-                _GridDevoirs.Add(AddDevoir(devoirs[i].Id, devoirs[i].Libelle, devoirs[i].Classe.Libelle, devoirs[i].Matiere.Libelle, devoirs[i].Description, char.ToUpper(devoirs[i].Date.ToString(format)[0]) + devoirs[i].Date.ToString(format).Substring(1), i == devoirs.Count() - 1));
+                AddDevoir(devoirs[i].Id, devoirs[i].Libelle, devoirs[i].Classe.Libelle, devoirs[i].Matiere.Libelle, devoirs[i].Description, char.ToUpper(devoirs[i].Date.ToString(format)[0]) + devoirs[i].Date.ToString(format).Substring(1), i == devoirs.Count() - 1);
             }
         }
         private void AfficherDevoirs(List<Devoir> devoirs)
         {
-            Pnl_Devoirs.Children.RemoveRange(1, Pnl_Devoirs.Children.Count);
+            Pnl_Devoirs.Children.RemoveRange(0, Pnl_Devoirs.Children.Count);
 
             if (!_ShowOld)
             {
@@ -619,21 +601,21 @@ namespace SIO_AgendaWPF
             Bdr_FenModal.Width = 580;
             Txb_Search.Width = 260;
             Col_Menu.Width = new GridLength(250);
-            foreach (Grid item in _GridDevoirs)
+            foreach (Grid item in GridElements)
             {
-                ((TextBlock)item.Children[1]).IsEnabled = false;
-                ((ScrollViewer)item.Children[3]).Visibility = Visibility.Visible;
+                ((TextBlock)((StackPanel)item.Children[0]).Children[0]).IsEnabled = false;
+                ((ScrollViewer)item.Children[2]).Visibility = Visibility.Visible;
             }
 
-            if (ActualWidth < 900)
+            if (ActualWidth <= 1000)
             {
                 Col_Menu.Width = new GridLength(250);
                 Bdr_FenModal.Width = 540;
                 Txb_Search.Width = 260;
-                foreach (Grid item in _GridDevoirs)
+                foreach (Grid item in GridElements)
                 {
-                    ((TextBlock)item.Children[1]).IsEnabled = true;
-                    ((ScrollViewer)item.Children[3]).Visibility = Visibility.Hidden;
+                    ((TextBlock)((StackPanel)item.Children[0]).Children[0]).IsEnabled = true;
+                    ((ScrollViewer)item.Children[2]).Visibility = Visibility.Hidden;
                 }
             }
 
