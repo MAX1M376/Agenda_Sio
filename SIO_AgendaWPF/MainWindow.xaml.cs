@@ -361,8 +361,12 @@ namespace SIO_AgendaWPF
                     _ActualDevoirs = _Devoirs;
 
                     // Ajouter itmes aux combobox
+                    int indexClasse = Cmb_Classe.SelectedIndex;
                     Cmb_Classe.ItemsSource = _Classes.OrderBy(x => x.Libelle).ToArray();
+                    Cmb_Classe.SelectedIndex = indexClasse;
+                    int indexMatiere = Cmb_Matiere.SelectedIndex;
                     Cmb_Matiere.ItemsSource = _Matieres.OrderBy(x => x.Libelle).ToArray();
+                    Cmb_Matiere.SelectedIndex = indexMatiere;
 
                     Txb_Chargement.Visibility = Visibility.Collapsed;
                 });
