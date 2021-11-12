@@ -605,6 +605,8 @@ namespace SIO_AgendaWPF
             {
                 ((TextBlock)((StackPanel)item.Children[0]).Children[0]).IsEnabled = false;
                 ((ScrollViewer)item.Children[2]).Visibility = Visibility.Visible;
+                var test = ((ScrollViewer)item.Children[2]).ComputedVerticalScrollBarVisibility == Visibility.Visible;
+                ((ScrollViewer)item.Children[2]).IsEnabled = test;
             }
 
             if (ActualWidth <= 1000)
