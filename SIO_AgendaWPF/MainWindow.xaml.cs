@@ -462,7 +462,7 @@ namespace SIO_AgendaWPF
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 Visibility = Visibility.Hidden,
                 Margin = new Thickness(5),
-                Style = (Style)Resources["ScrollBarStyleLight"],
+                Style = (Style)Resources["ScrollBarStyleLightBis"],
                 Content = gridElement
             };
             Grid.SetColumn(gridElement, 1);

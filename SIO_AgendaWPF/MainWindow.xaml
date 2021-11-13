@@ -295,7 +295,7 @@
             </Grid>
         </ControlTemplate>
 
-        <Style x:Key="ScrollBarStyleLight" TargetType="{x:Type ScrollViewer}">
+        <Style x:Key="ScrollBarStyleLightBis" TargetType="{x:Type ScrollViewer}">
             <Setter Property="Template" Value="{StaticResource ScrollViewerControlTemplateLight}"/>
             <Style.Triggers>
                 <Trigger Property="ComputedVerticalScrollBarVisibility" Value="Collapsed">
@@ -305,6 +305,10 @@
                     <Setter Property="IsEnabled" Value="True"/>
                 </Trigger>
             </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ScrollBarStyleLight" TargetType="{x:Type ScrollViewer}">
+            <Setter Property="Template" Value="{StaticResource ScrollViewerControlTemplateLight}"/>
         </Style>
 
         <Style x:Key="ScrollBarStyleBlack" TargetType="{x:Type ScrollViewer}">
