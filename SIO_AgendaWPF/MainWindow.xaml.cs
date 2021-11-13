@@ -521,12 +521,13 @@ namespace SIO_AgendaWPF
             int test = Mod((int)DateTime.Now.DayOfWeek + 1, 7);
             var finSemaine = DateTime.Now.AddDays(6 - test);
             DateTime dateFinSem = new DateTime(finSemaine.Year, finSemaine.Month, finSemaine.Day) + new TimeSpan(23, 59, 59);
+            devoirs = devoirs.OrderBy(x => x, new Devoir()).ToList();
 
-            AddListDevoirs("Déjà fais", devoirs.Where(x => x.Date < DateTime.Now).OrderBy(x => x.Date).ToArray(), "d MMM yy");
-            AddListDevoirs("Cette semaine", devoirs.Where(x => x.Date >= DateTime.Now && x.Date <= dateFinSem).OrderBy(x => x.Date).ToArray(), "dddd");
-            AddListDevoirs("Plus tard", devoirs.Where(x => x.Date > dateFinSem).OrderBy(x => x.Date).ToArray(), "d MMM yy");
+            AddListDevoirs("Déjà fais", devoirs.Where(x => x.Date < DateTime.Now).ToList(), "d MMM yy");
+            AddListDevoirs("Cette semaine", devoirs.Where(x => x.Date >= DateTime.Now && x.Date <= dateFinSem).ToList(), "dddd");
+            AddListDevoirs("Plus tard", devoirs.Where(x => x.Date > dateFinSem).ToList(), "d MMM yy");
         }
-        private void AddListDevoirs(string titre, Devoir[] devoirs, string format)
+        private void AddListDevoirs(string titre, List<Devoir> devoirs, string format)
         {
             if (devoirs.Count() != 0)
             {

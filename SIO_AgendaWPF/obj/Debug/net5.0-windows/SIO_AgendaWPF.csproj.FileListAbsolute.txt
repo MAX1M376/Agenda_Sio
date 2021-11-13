@@ -46,3 +46,4 @@ C:\Users\Maxime\Documents\Development\Git\Agenda_Sio\SIO_AgendaWPF\obj\Debug\net
 C:\Users\Maxime\Documents\Development\Git\Agenda_Sio\SIO_AgendaWPF\obj\Debug\net5.0-windows\ref\SIO_AgendaWPF.dll
 C:\Users\Maxime\Documents\Development\Git\Agenda_Sio\SIO_AgendaWPF\obj\Debug\net5.0-windows\SIO_AgendaWPF.pdb
 C:\Users\Maxime\Documents\Development\Git\Agenda_Sio\SIO_AgendaWPF\obj\Debug\net5.0-windows\SIO_AgendaWPF.genruntimeconfig.cache
+C:\Users\Maxime\Documents\Development\Git\Agenda_Sio\SIO_AgendaWPF\bin\Debug\net5.0-windows\System.Linq.Dynamic.Core.dll
