@@ -1,7 +1,0 @@
-C:\Users\Maxime\Documents\Development\Git\Agenda_Sio\Build\SIO_AgendaWPF.exe
-C:\Users\Maxime\Documents\Development\Git\Agenda_Sio\Build\SIO_AgendaWPF.dll
-C:\Users\Maxime\Documents\Development\Git\Agenda_Sio\Build\SIO_AgendaWPF.deps.json
-C:\Users\Maxime\Documents\Development\Git\Agenda_Sio\Build\SIO_AgendaWPF.runtimeconfig.json
-C:\Users\Maxime\Documents\Development\Git\Agenda_Sio\Build\SIO_AgendaWPF.pdb
-C:\Users\Maxime\Documents\Development\Git\Agenda_Sio\Build\Newtonsoft.Json.dll
-C:\Users\Maxime\Documents\Development\Git\Agenda_Sio\Build\System.Linq.Dynamic.Core.dll

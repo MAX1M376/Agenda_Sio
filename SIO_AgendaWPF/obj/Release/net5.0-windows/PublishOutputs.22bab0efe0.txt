@@ -1,6 +1,0 @@
-C:\Users\Maxime\Desktop\MAD_Agenda\Build\SIO_AgendaWPF.exe
-C:\Users\Maxime\Desktop\MAD_Agenda\Build\SIO_AgendaWPF.dll
-C:\Users\Maxime\Desktop\MAD_Agenda\Build\SIO_AgendaWPF.deps.json
-C:\Users\Maxime\Desktop\MAD_Agenda\Build\SIO_AgendaWPF.runtimeconfig.json
-C:\Users\Maxime\Desktop\MAD_Agenda\Build\SIO_AgendaWPF.pdb
-C:\Users\Maxime\Desktop\MAD_Agenda\Build\Newtonsoft.Json.dll

@@ -1,0 +1,35 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31829.152
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIO_AgendaXamarin.Android", "SIO_AgendaXamarin\SIO_AgendaXamarin.Android\SIO_AgendaXamarin.Android.csproj", "{84B002B7-0F28-4C04-B8F5-005A818584B5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIO_AgendaXamarin", "SIO_AgendaXamarin\SIO_AgendaXamarin\SIO_AgendaXamarin.csproj", "{3509225A-AC75-4CFA-AE2D-65F1C6D3E54F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{84B002B7-0F28-4C04-B8F5-005A818584B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84B002B7-0F28-4C04-B8F5-005A818584B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84B002B7-0F28-4C04-B8F5-005A818584B5}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{84B002B7-0F28-4C04-B8F5-005A818584B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84B002B7-0F28-4C04-B8F5-005A818584B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84B002B7-0F28-4C04-B8F5-005A818584B5}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{3509225A-AC75-4CFA-AE2D-65F1C6D3E54F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3509225A-AC75-4CFA-AE2D-65F1C6D3E54F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3509225A-AC75-4CFA-AE2D-65F1C6D3E54F}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{3509225A-AC75-4CFA-AE2D-65F1C6D3E54F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3509225A-AC75-4CFA-AE2D-65F1C6D3E54F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3509225A-AC75-4CFA-AE2D-65F1C6D3E54F}.Release|Any CPU.Deploy.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {211421DC-1238-414F-8B2C-9CF21EE82A2D}
+	EndGlobalSection
+EndGlobal
