@@ -451,7 +451,7 @@ namespace SIO_AgendaWPF
                 Text = description,
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                TextAlignment = TextAlignment.Center,
+                TextAlignment = TextAlignment.Left,
                 TextWrapping = TextWrapping.Wrap,
                 FontSize = 14,
                 Foreground = (SolidColorBrush)Resources["TextColor"]
