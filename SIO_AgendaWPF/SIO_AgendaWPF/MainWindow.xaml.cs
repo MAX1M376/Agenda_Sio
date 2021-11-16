@@ -136,8 +136,8 @@ namespace SIO_AgendaWPF
         private void RestoreDevoir_MouseDown(object sender, MouseButtonEventArgs e)
         {
             Task<bool> restoreAsync = _Repository.RestoreDevoir();
-            restoreAsync.Wait();
-            restoreAsync.Dispose();
+            restoreAsync = Task.Run(() => restoreAsync);
+            while (restoreAsync.Status == TaskStatus.RanToCompletion) { }
             if (_ActualDevoirs.Equals(_Devoirs))
             {
                 Application.Current.ExecOnUiThread(() =>
@@ -151,7 +151,6 @@ namespace SIO_AgendaWPF
                 Task<List<Devoir>> devoirsAsync = _Repository.GetDevoirs();
                 devoirsAsync.Wait();
                 _Devoirs = devoirsAsync.Result;
-                devoirsAsync.Dispose();
                 _Devoirs.ForEach(x => x.Date += new TimeSpan(23, 59, 59));
             }
         }
@@ -218,12 +217,11 @@ namespace SIO_AgendaWPF
             {
                 Task<bool> deleteAsync = _Repository.DeleteDevoirs(deletedDev.Id);
                 deleteAsync = Task.Run(() => deleteAsync);
-                while (deleteAsync.IsCompleted) { }
+                while (deleteAsync.Status == TaskStatus.RanToCompletion) { }
                 if (!deleteAsync.Result)
                 {
                     throw new Exception("Erreur de suppresion");
                 }
-                deleteAsync.Dispose();
                 _Devoirs.Remove(deletedDev);
                 AfficherDevoirs(_ActualDevoirs);
             }
@@ -281,7 +279,6 @@ namespace SIO_AgendaWPF
                 Task<int> postAsync = _Repository.PostDevoirs(dev);
                 postAsync.Wait();
                 dev.Id = postAsync.Result;
-                postAsync.Dispose();
                 _Devoirs.Add(dev);
             }
 
