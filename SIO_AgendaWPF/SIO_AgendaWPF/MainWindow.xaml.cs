@@ -76,9 +76,10 @@ namespace SIO_AgendaWPF
             }
             else
             {
-                var taskDevoirs = Task.Run(() => _Repository.GetDevoirs());
-                while (taskDevoirs.Status != TaskStatus.RanToCompletion) { }
-                _Devoirs = taskDevoirs.Result;
+                Task<List<Devoir>> devoirsAsync = _Repository.GetDevoirs();
+                devoirsAsync.Wait();
+                _Devoirs = devoirsAsync.Result;
+                devoirsAsync.Dispose();
                 _Devoirs.ForEach(x => x.Date += new TimeSpan(23, 59, 59));
             }
         }
@@ -134,8 +135,9 @@ namespace SIO_AgendaWPF
 
         private void RestoreDevoir_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            var taskDevoir = Task.Run(() => _Repository.RestoreDevoir());
-            while (taskDevoir.Status != TaskStatus.RanToCompletion) { }
+            Task<bool> restoreAsync = _Repository.RestoreDevoir();
+            restoreAsync.Wait();
+            restoreAsync.Dispose();
             if (_ActualDevoirs.Equals(_Devoirs))
             {
                 Application.Current.ExecOnUiThread(() =>
@@ -146,9 +148,10 @@ namespace SIO_AgendaWPF
             }
             else
             {
-                var taskDevoirs = Task.Run(() => _Repository.GetDevoirs());
-                while (taskDevoirs.Status != TaskStatus.RanToCompletion) { }
-                _Devoirs = taskDevoirs.Result;
+                Task<List<Devoir>> devoirsAsync = _Repository.GetDevoirs();
+                devoirsAsync.Wait();
+                _Devoirs = devoirsAsync.Result;
+                devoirsAsync.Dispose();
                 _Devoirs.ForEach(x => x.Date += new TimeSpan(23, 59, 59));
             }
         }
@@ -213,8 +216,14 @@ namespace SIO_AgendaWPF
             MessageBoxResult result = MessageBox.Show("Voulez supprimer ce devoir ?", "Supprimer ?", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result == MessageBoxResult.Yes)
             {
-                var taskDel = Task.Run(() => _Repository.DeleteDevoirs(deletedDev.Id));
-                while (taskDel.Status != TaskStatus.RanToCompletion) { }
+                Task<bool> deleteAsync = _Repository.DeleteDevoirs(deletedDev.Id);
+                deleteAsync = Task.Run(() => deleteAsync);
+                while (deleteAsync.IsCompleted) { }
+                if (!deleteAsync.Result)
+                {
+                    throw new Exception("Erreur de suppresion");
+                }
+                deleteAsync.Dispose();
                 _Devoirs.Remove(deletedDev);
                 AfficherDevoirs(_ActualDevoirs);
             }
@@ -269,9 +278,10 @@ namespace SIO_AgendaWPF
 
             if (int.Parse(Txb_Modal.Uid) == (int)Methodes.Ajouter)
             {
-                var taskDevoirs = Task.Run(() => _Repository.PostDevoirs(dev));
-                while (taskDevoirs.Status != TaskStatus.RanToCompletion) { }
-                dev.Id = taskDevoirs.Result;
+                Task<int> postAsync = _Repository.PostDevoirs(dev);
+                postAsync.Wait();
+                dev.Id = postAsync.Result;
+                postAsync.Dispose();
                 _Devoirs.Add(dev);
             }
 
@@ -279,8 +289,12 @@ namespace SIO_AgendaWPF
             {
                 _Devoirs.Remove(_ActualDevoirs.First(x => x.Id == int.Parse(Btn_SaveModal.Uid)));
                 dev.Id = int.Parse(Btn_SaveModal.Uid);
-                var taskDevoirs = Task.Run(() => _Repository.UpdateDevoirs(dev.Id, dev));
-                while (taskDevoirs.Status != TaskStatus.RanToCompletion) { }
+                Task<bool> updateAsync = _Repository.UpdateDevoirs(dev.Id, dev);
+                updateAsync.Wait();
+                if (!updateAsync.Result)
+                {
+                    throw new Exception("Erreur de suppression");
+                }
                 _Devoirs.Add(dev);
             }
 
@@ -311,19 +325,15 @@ namespace SIO_AgendaWPF
 
             var taskOnLoad = Task.Factory.StartNew(() =>
             {
-                var taskDevoirs = Task.Run(() => _Repository.GetDevoirs());
-                while (taskDevoirs.Status != TaskStatus.RanToCompletion) { }
-                _Devoirs = taskDevoirs.Result;
-                _Devoirs.ForEach(x => x.Date += new TimeSpan(23, 59, 59));
-                _ActualDevoirs = _Devoirs;
+                Task<List<Devoir>> devoirsAsync = _Repository.GetDevoirs();
+                Task<List<Classe>> classesAsync = _Repository.GetClasses();
+                Task<List<Matiere>> matieresAsync = _Repository.GetMatieres();
 
-                var taskClasses = Task.Run(() => _Repository.GetClasses());
-                while (taskClasses.Status != TaskStatus.RanToCompletion) { }
-                _Classes = taskClasses.Result;
+                Task.WhenAll(devoirsAsync, classesAsync, matieresAsync).Wait();
 
-                var taskMatieres = Task.Run(() => _Repository.GetMatieres());
-                while (taskMatieres.Status != TaskStatus.RanToCompletion) { }
-                _Matieres = taskMatieres.Result;
+                _Devoirs = devoirsAsync.Result;
+                _Classes = classesAsync.Result;
+                _Matieres = matieresAsync.Result;
             });
 
             Task.Factory.ContinueWhenAll(new[] { taskOnLoad }, x =>
