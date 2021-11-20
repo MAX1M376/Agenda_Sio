@@ -66,20 +66,20 @@ namespace SIO_AgendaWPF
 
         private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
+            // Si page par defaut
             if (_ActualDevoirs.Equals(_Devoirs))
             {
                 Application.Current.ExecOnUiThread(() => 
                 {
                     LoadDataComponents(false);
                 });
-                
             }
+            // Sinon juste recupérer les devoirs
             else
             {
                 Task<List<Devoir>> devoirsAsync = _Repository.GetDevoirs();
                 devoirsAsync.Wait();
                 _Devoirs = devoirsAsync.Result;
-                devoirsAsync.Dispose();
                 _Devoirs.ForEach(x => x.Date += new TimeSpan(23, 59, 59));
             }
         }
@@ -288,19 +288,10 @@ namespace SIO_AgendaWPF
                 dev.Id = int.Parse(Btn_SaveModal.Uid);
                 Task<bool> updateAsync = _Repository.UpdateDevoirs(dev.Id, dev);
                 updateAsync.Wait();
-                if (!updateAsync.Result)
-                {
-                    throw new Exception("Erreur de suppression");
-                }
                 _Devoirs.Add(dev);
             }
 
-            Cvs_Libelle.Visibility = Visibility.Hidden;
-            Cvs_Description.Visibility = Visibility.Hidden;
-            Cvs_Date.Visibility = Visibility.Hidden;
-            Cvs_Classe.Visibility = Visibility.Hidden;
-            Cvs_Matiere.Visibility = Visibility.Hidden;
-            Bdr_Modal.Visibility = Visibility.Hidden;
+            Btn_CloseModal(sender, e);
             AfficherDevoirs(_ActualDevoirs);
         }
 
@@ -318,6 +309,10 @@ namespace SIO_AgendaWPF
         #region Privee
         private void LoadDataComponents(bool chargement)
         {
+            if (chargement)
+            {
+                Pnl_Devoirs.Children.RemoveRange(0, Pnl_Devoirs.Children.Count);
+            }
             Txb_Chargement.Visibility = chargement ? Visibility.Visible : Visibility.Collapsed;
 
             var taskOnLoad = Task.Factory.StartNew(() =>
@@ -593,13 +588,11 @@ namespace SIO_AgendaWPF
 
         private void Txb_Search_LostFocus(object sender, RoutedEventArgs e)
         {
-            #region Style
             if (((TextBox)sender).Text == "")
             {
                 ((TextBox)sender).Text = "Recherche...";
             }
             ((TextBox)sender).Foreground = (SolidColorBrush)Resources["TextLightColor"];
-            #endregion
         }
 
         private void Border_MouseDown(object sender, MouseButtonEventArgs e) => Txb_Search.Focus();
