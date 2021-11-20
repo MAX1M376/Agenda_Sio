@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace SIO_AgendaWPF.Models
 {
-    class Devoir : IComparer<Devoir>
+    public class Devoir : IComparer<Devoir>
     {
         public int Id { get; set; }
         public string Libelle { get; set; }
