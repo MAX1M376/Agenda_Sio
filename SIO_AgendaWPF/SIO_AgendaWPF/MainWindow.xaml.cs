@@ -135,15 +135,13 @@ namespace SIO_AgendaWPF
 
         private void RestoreDevoir_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            Task<bool> restoreAsync = _Repository.RestoreDevoir();
-            restoreAsync = Task.Run(() => restoreAsync);
+            var restoreAsync = Task.Run(() => _Repository.RestoreDevoir());
             while (restoreAsync.Status == TaskStatus.RanToCompletion) { }
             if (_ActualDevoirs.Equals(_Devoirs))
             {
                 Application.Current.ExecOnUiThread(() =>
                 {
-                    MainWindow wind = Application.Current.MainWindow as MainWindow;
-                    wind.Refresh_MouseDown(sender, null);
+                    LoadDataComponents(false);
                 });
             }
             else
@@ -215,13 +213,8 @@ namespace SIO_AgendaWPF
             MessageBoxResult result = MessageBox.Show("Voulez supprimer ce devoir ?", "Supprimer ?", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result == MessageBoxResult.Yes)
             {
-                Task<bool> deleteAsync = _Repository.DeleteDevoirs(deletedDev.Id);
-                deleteAsync = Task.Run(() => deleteAsync);
+                var deleteAsync = Task.Run(() => _Repository.DeleteDevoirs(deletedDev.Id));
                 while (deleteAsync.Status == TaskStatus.RanToCompletion) { }
-                if (!deleteAsync.Result)
-                {
-                    throw new Exception("Erreur de suppresion");
-                }
                 _Devoirs.Remove(deletedDev);
                 AfficherDevoirs(_ActualDevoirs);
             }
