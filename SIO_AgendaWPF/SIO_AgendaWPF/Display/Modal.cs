@@ -10,6 +10,8 @@ namespace SIO_AgendaWPF.Display
     {
         private static readonly MainWindow window = new();
 
+        // Public
+
         public static void CloseModal()
         {
             window.Cvs_Libelle.Visibility = Visibility.Hidden;

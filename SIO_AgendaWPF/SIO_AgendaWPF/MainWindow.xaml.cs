@@ -69,10 +69,7 @@ namespace SIO_AgendaWPF
             // Si page par defaut
             if (_ActualDevoirs.Equals(_Devoirs))
             {
-                Application.Current.ExecOnUiThread(() => 
-                {
-                    LoadDataComponents(false);
-                });
+                LoadDataComponents(false);
             }
             // Sinon juste recupérer les devoirs
             else
@@ -136,10 +133,7 @@ namespace SIO_AgendaWPF
             while (restoreAsync.Status == TaskStatus.RanToCompletion) { }
             if (_ActualDevoirs.Equals(_Devoirs))
             {
-                Application.Current.ExecOnUiThread(() =>
-                {
-                    LoadDataComponents(false);
-                });
+                LoadDataComponents(false);
             }
             else
             {
@@ -284,45 +278,38 @@ namespace SIO_AgendaWPF
 
         private void LoadDataComponents(bool chargement)
         {
-            if (chargement)
-            {
-                Pnl_Devoirs.Children.RemoveRange(0, Pnl_Devoirs.Children.Count);
-            }
-            Txb_Chargement.Visibility = chargement ? Visibility.Visible : Visibility.Collapsed;
+            var devoirsAsync = _Repository.GetDevoirs();
+            var classesAsync = _Repository.GetClasses();
+            var matieresAsync = _Repository.GetMatieres();
 
-            Task.Factory.StartNew(() =>
+            Application.Current.ExecOnUiThread(() =>
+            {
+                if (chargement)
+                {
+                    Pnl_Devoirs.Children.RemoveRange(0, Pnl_Devoirs.Children.Count);
+                }
+                Txb_Chargement.Visibility = chargement ? Visibility.Visible : Visibility.Collapsed;
+            });
+
+            Task.Factory.ContinueWhenAll(new[] { Task.WhenAll(devoirsAsync, classesAsync, matieresAsync) }, x =>
             {
                 Application.Current.ExecOnUiThread(() =>
                 {
-                    Task<List<Devoir>> devoirsAsync = _Repository.GetDevoirs();
-                    Task<List<Classe>> classesAsync = _Repository.GetClasses();
-                    Task<List<Matiere>> matieresAsync = _Repository.GetMatieres();
-
-                    // Les devoirs
-                    devoirsAsync.Wait();
-                    _Devoirs = devoirsAsync.Result;
-
                     DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
-                    _ActualDevoirs = _Devoirs;
-
-                    // Les Classes
-                    classesAsync.Wait();
-                    _Classes = classesAsync.Result;
 
                     DisplayMain.Classes(_Classes.Where(x => x.Libelle.ToUpper() != "GROUPE A & B").OrderBy(x => x.Libelle).Append(new Classe { Id = 0, Libelle = "Tous" }).ToArray());
+
                     int indexClasse = Cmb_Classe.SelectedIndex;
                     Cmb_Classe.ItemsSource = _Classes.OrderBy(x => x.Libelle).ToArray();
                     Cmb_Classe.SelectedIndex = indexClasse;
 
-                    // Les Matieres
-                    _Matieres = matieresAsync.Result;
                     int indexMatiere = Cmb_Matiere.SelectedIndex;
                     Cmb_Matiere.ItemsSource = _Matieres.OrderBy(x => x.Libelle).ToArray();
                     Cmb_Matiere.SelectedIndex = indexMatiere;
+
+                    Txb_Chargement.Visibility = Visibility.Collapsed;
                 });
             });
-
-            Txb_Chargement.Visibility = Visibility.Collapsed;
         }
 
         #region Style

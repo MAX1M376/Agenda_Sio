@@ -13,6 +13,8 @@ namespace SIO_AgendaWPF.Display
     {
         private static readonly MainWindow window = new();
 
+        // Publics
+
         public static void Classes(Classe[] classes)
         {
             window.Pnl_MenuDevoirs.Children.RemoveRange(0, window.Pnl_MenuDevoirs.Children.Count);
@@ -56,6 +58,8 @@ namespace SIO_AgendaWPF.Display
             CategorieDevoirs("Cette semaine", devoirs.Where(x => x.Date >= DateTime.Now && x.Date <= dateFinSem).ToList(), "dddd");
             CategorieDevoirs("Plus tard", devoirs.Where(x => x.Date > dateFinSem).ToList(), "d MMM yy");
         }
+
+        // Privates
 
         private static void CategorieDevoirs(string titre, List<Devoir> devoirs, string format)
         {
