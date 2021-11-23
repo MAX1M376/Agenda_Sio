@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "ProjectMap": {
+    "4c1e272b-404d-40ae-917d-e7372b6a243e": {
+      "ProjectGuid": "4c1e272b-404d-40ae-917d-e7372b6a243e",
+      "DisplayName": "SIO_AgendaWPF",
+      "ColorIndex": 0
+    }
+  },
+  "NextColorIndex": 1
+}
