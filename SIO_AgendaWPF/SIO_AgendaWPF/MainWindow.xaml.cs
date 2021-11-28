@@ -32,6 +32,8 @@ namespace SIO_AgendaWPF
         private List<Devoir> _Devoirs;
         private List<Classe> _Classes;
         private List<Matiere> _Matieres;
+        private DisplayMain _DisplayMain;
+        private DisplayModal _DisplayModal;
         public List<Grid> GridElements
         {
             get { return Pnl_Devoirs.Children.Cast<UIElement>().Where(item => item is Border).Select(item => ((Border)item).Child as Grid).ToList(); }
@@ -44,6 +46,8 @@ namespace SIO_AgendaWPF
             Width = Settings.Default.Size.Width; Height = Settings.Default.Size.Height;
             _ShowOld = Settings.Default.ShowOld;
             _Repository = new AgendaRepository();
+            _DisplayMain = new(this);
+            _DisplayModal = new(this);
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -53,6 +57,7 @@ namespace SIO_AgendaWPF
             ((TextBlock)Btn_AfficheOld.Child).Text = _ShowOld ? "Cacher les anciens" : "Montrer les anciens";
             Pnl_MenuDevoirs.Height = 0;
 
+            Cursor = Cursors.Wait;
             LoadDataComponents(true);
 
             // Set timer
@@ -105,18 +110,18 @@ namespace SIO_AgendaWPF
             if (string.IsNullOrEmpty(Txb_Search.Text))
             {
                 _ActualDevoirs = _Devoirs;
-                DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
+                _DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
                 return;
             }
             _ActualDevoirs = _Devoirs.Where(item => item.Matiere.Libelle.ToUpper().StartsWith(Txb_Search.Text.ToUpper())).ToList();
             if (_ActualDevoirs.Count != 0)
             {
-                DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
+                _DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
                 return;
             }
             
             _ActualDevoirs = _Devoirs.Where(item => item.Libelle.ToUpper().Contains(Txb_Search.Text.ToUpper())).ToList();
-            DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
+            _DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
             return;
         }
 
@@ -124,13 +129,14 @@ namespace SIO_AgendaWPF
         {
             Txb_Modal.Text = "Ajouter un devoir";
             Txb_Modal.Uid = ((int)Methodes.Ajouter).ToString();
-            DisplayModal.OpenModal(string.Empty, null, null, string.Empty, null, Methodes.Ajouter);
+            _DisplayModal.OpenModal(string.Empty, null, null, string.Empty, null, Methodes.Ajouter);
         }
 
         private void RestoreDevoir_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            Cursor = Cursors.Wait;
             var restoreAsync = Task.Run(() => _Repository.RestoreDevoir());
-            while (restoreAsync.Status == TaskStatus.RanToCompletion) { }
+            restoreAsync.Wait();
             if (_ActualDevoirs.Equals(_Devoirs))
             {
                 LoadDataComponents(false);
@@ -148,7 +154,7 @@ namespace SIO_AgendaWPF
         {
             _ShowOld = !_ShowOld;
             ((TextBlock)Btn_AfficheOld.Child).Text = _ShowOld ? "Cacher les anciens" : "Montrer les anciens";
-            DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
+            _DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
         }
 
         public void Classe_MouseDown(object sender, MouseButtonEventArgs e)
@@ -157,22 +163,23 @@ namespace SIO_AgendaWPF
             if (int.Parse(((Border)sender).Uid) == 0)
             {
                 _ActualDevoirs = _Devoirs;
-                DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
+                _DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
                 return;
             }
             string libelle = _Classes.First(item => item.Id == int.Parse(((Border)sender).Uid)).Libelle;
             if (libelle.ToUpper() == "GROUPE A" || libelle.ToUpper() == "GROUPE B")
             {
                 _ActualDevoirs = _Devoirs.Where(x => x.Classe.Id == int.Parse(((Border)sender).Uid)).Concat(_Devoirs.Where(item => item.Classe.Libelle.ToUpper() == "GROUPE A & B")).ToList();
-                DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
+                _DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
                 return;
             }
             _ActualDevoirs = _Devoirs.Where(x => x.Classe.Id == int.Parse(((Border)sender).Uid)).ToList();
-            DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
+            _DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
         }
 
         private void Refresh_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            Cursor = Cursors.Wait;
             LoadDataComponents(false);
         }
 
@@ -181,7 +188,7 @@ namespace SIO_AgendaWPF
             Devoir devSelected = _ActualDevoirs.First(x => x.Id == int.Parse(((TextBlock)sender).Uid));
             Txb_Modal.Text = "Affiche un devoir";
             Txb_Modal.Uid = ((int)Methodes.Selectionner).ToString();
-            DisplayModal.OpenModal(devSelected.Libelle, devSelected.Matiere, devSelected.Classe, devSelected.Description, devSelected.Date, Methodes.Selectionner);
+            _DisplayModal.OpenModal(devSelected.Libelle, devSelected.Matiere, devSelected.Classe, devSelected.Description, devSelected.Date, Methodes.Selectionner);
         }
 
         public void Edit_MouseDown(object sender, MouseButtonEventArgs e)
@@ -190,20 +197,19 @@ namespace SIO_AgendaWPF
             Txb_Modal.Text = "Modifier un devoir";
             Txb_Modal.Uid = ((int)Methodes.Modifier).ToString();
             Btn_SaveModal.Uid = devSelected.Id.ToString();
-            DisplayModal.OpenModal(devSelected.Libelle, devSelected.Matiere, devSelected.Classe, devSelected.Description, devSelected.Date, Methodes.Modifier);
+            _DisplayModal.OpenModal(devSelected.Libelle, devSelected.Matiere, devSelected.Classe, devSelected.Description, devSelected.Date, Methodes.Modifier);
         }
 
         public void Delete_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            Cursor = Cursors.Wait;
             var deletedDev = _ActualDevoirs.First(item => item.Id == int.Parse(((Border)sender).Uid));
             MessageBoxResult result = MessageBox.Show("Voulez supprimer ce devoir ?", "Supprimer ?", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result == MessageBoxResult.Yes)
             {
                 var deleteAsync = Task.Run(() => _Repository.DeleteDevoirs(deletedDev.Id));
-                while (deleteAsync.Status == TaskStatus.RanToCompletion) { }
-                _Devoirs.Remove(deletedDev);
-
-                DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
+                deleteAsync.Wait();
+                LoadDataComponents(false);
             }
         }
 
@@ -215,7 +221,7 @@ namespace SIO_AgendaWPF
             }
             if (e.Key == Key.Escape)
             {
-                DisplayModal.CloseModal();
+                _DisplayModal.CloseModal();
             }
         }
 
@@ -254,7 +260,7 @@ namespace SIO_AgendaWPF
 
             if (int.Parse(Txb_Modal.Uid) == (int)Methodes.Ajouter)
             {
-                Task<int> postAsync = _Repository.PostDevoirs(dev);
+                var postAsync = Task.Run(() => _Repository.PostDevoirs(dev)) ;
                 postAsync.Wait();
                 dev.Id = postAsync.Result;
                 _Devoirs.Add(dev);
@@ -264,24 +270,19 @@ namespace SIO_AgendaWPF
             {
                 _Devoirs.Remove(_ActualDevoirs.First(x => x.Id == int.Parse(Btn_SaveModal.Uid)));
                 dev.Id = int.Parse(Btn_SaveModal.Uid);
-                Task<bool> updateAsync = _Repository.UpdateDevoirs(dev.Id, dev);
+                var updateAsync = Task.Run(() => _Repository.UpdateDevoirs(dev.Id, dev));
                 updateAsync.Wait();
                 _Devoirs.Add(dev);
             }
 
-            DisplayModal.CloseModal();
-
-            DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
+            _DisplayModal.CloseModal();
+            _DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
         }
 
-        private void Btn_CloseModal(object sender, MouseButtonEventArgs e) => DisplayModal.CloseModal();
+        private void Btn_CloseModal(object sender, MouseButtonEventArgs e) => _DisplayModal.CloseModal();
 
         private void LoadDataComponents(bool chargement)
         {
-            var devoirsAsync = _Repository.GetDevoirs();
-            var classesAsync = _Repository.GetClasses();
-            var matieresAsync = _Repository.GetMatieres();
-
             Application.Current.ExecOnUiThread(() =>
             {
                 if (chargement)
@@ -291,13 +292,15 @@ namespace SIO_AgendaWPF
                 Txb_Chargement.Visibility = chargement ? Visibility.Visible : Visibility.Collapsed;
             });
 
-            Task.Factory.ContinueWhenAll(new[] { Task.WhenAll(devoirsAsync, classesAsync, matieresAsync) }, x =>
+            var taskData = Task.Run(() => UpdateData());
+                
+            taskData.ContinueWith(t =>
             {
                 Application.Current.ExecOnUiThread(() =>
                 {
-                    DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
+                    _DisplayMain.Devoirs(_ActualDevoirs, _ShowOld);
 
-                    DisplayMain.Classes(_Classes.Where(x => x.Libelle.ToUpper() != "GROUPE A & B").OrderBy(x => x.Libelle).Append(new Classe { Id = 0, Libelle = "Tous" }).ToArray());
+                    _DisplayMain.Classes(_Classes.Where(x => x.Libelle.ToUpper() != "GROUPE A & B").OrderBy(x => x.Libelle).Append(new Classe { Id = 0, Libelle = "Tous" }).ToArray());
 
                     int indexClasse = Cmb_Classe.SelectedIndex;
                     Cmb_Classe.ItemsSource = _Classes.OrderBy(x => x.Libelle).ToArray();
@@ -308,8 +311,37 @@ namespace SIO_AgendaWPF
                     Cmb_Matiere.SelectedIndex = indexMatiere;
 
                     Txb_Chargement.Visibility = Visibility.Collapsed;
+                    Cursor = Cursors.Arrow;
                 });
             });
+        }
+
+        private async Task UpdateData()
+        {
+            var devoirsAsync = _Repository.GetDevoirs();
+            var classesAsync = _Repository.GetClasses();
+            var matieresAsync = _Repository.GetMatieres();
+
+            List<Task> tasks = new List<Task>() { devoirsAsync, classesAsync, matieresAsync };
+
+            while (tasks.Count > 0)
+            {
+                Task finishedTask = await Task.WhenAny(tasks);
+                if (finishedTask == devoirsAsync)
+                {
+                    _Devoirs = await devoirsAsync;
+                    _ActualDevoirs = _Devoirs;
+                }
+                if (finishedTask == classesAsync)
+                {
+                    _Classes = classesAsync.Result;
+                }
+                if (finishedTask == matieresAsync)
+                {
+                    _Matieres = matieresAsync.Result;
+                }
+                tasks.Remove(finishedTask);
+            }
         }
 
         #region Style

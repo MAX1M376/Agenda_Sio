@@ -9,13 +9,17 @@ using static SIO_AgendaWPF.MainWindow;
 
 namespace SIO_AgendaWPF.Display
 {
-    public static class DisplayMain
+    public class DisplayMain
     {
-        private static readonly MainWindow window = new();
+        private static MainWindow window = new();
 
         // Publics
+        public DisplayMain(MainWindow _window)
+        {
+            window = _window;
+        }
 
-        public static void Classes(Classe[] classes)
+        public void Classes(Classe[] classes)
         {
             window.Pnl_MenuDevoirs.Children.RemoveRange(0, window.Pnl_MenuDevoirs.Children.Count);
 
@@ -38,7 +42,7 @@ namespace SIO_AgendaWPF.Display
             window._HeightPnlDevoirs = window.Pnl_MenuDevoirs.ActualHeight;
         }
 
-        public static void Devoirs(List<Devoir> devoirs, bool showOld)
+        public void Devoirs(List<Devoir> devoirs, bool showOld)
         {
             window.Pnl_Devoirs.Children.RemoveRange(0, window.Pnl_Devoirs.Children.Count);
 
@@ -61,7 +65,7 @@ namespace SIO_AgendaWPF.Display
 
         // Privates
 
-        private static void CategorieDevoirs(string titre, List<Devoir> devoirs, string format)
+        private void CategorieDevoirs(string titre, List<Devoir> devoirs, string format)
         {
             if (devoirs.Count() != 0)
             {
@@ -78,7 +82,7 @@ namespace SIO_AgendaWPF.Display
             }
         }
 
-        private static void AddDevoir(int id, string libelle, string classe, string matiere, string description, string date, bool isLast)
+        private void AddDevoir(int id, string libelle, string classe, string matiere, string description, string date, bool isLast)
         {
             // Creation de la Grille
             Grid grid;
@@ -207,7 +211,7 @@ namespace SIO_AgendaWPF.Display
             });
         }
 
-        private static int Mod(int x, int m)
+        private int Mod(int x, int m)
         {
             int r = x % m;
             return r < 0 ? r + m : r;

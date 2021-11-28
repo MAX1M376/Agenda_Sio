@@ -8,11 +8,16 @@ namespace SIO_AgendaWPF.Display
 {
     public class DisplayModal
     {
-        private static readonly MainWindow window = new();
+        private static MainWindow window = new();
 
+        // Publics
+        public DisplayModal(MainWindow _window)
+        {
+            window = _window;
+        }
         // Public
 
-        public static void CloseModal()
+        public void CloseModal()
         {
             window.Cvs_Libelle.Visibility = Visibility.Hidden;
             window.Cvs_Description.Visibility = Visibility.Hidden;
@@ -22,7 +27,7 @@ namespace SIO_AgendaWPF.Display
             window.Bdr_Modal.Visibility = Visibility.Hidden;
         }
 
-        public static void OpenModal(string libelle, Matiere matiere, Classe classe, string description, DateTime? date, Methodes editable)
+        public void OpenModal(string libelle, Matiere matiere, Classe classe, string description, DateTime? date, Methodes editable)
         {
             window.Bdr_Modal.Visibility = Visibility.Visible;
             window.ContentModal.Focus();
